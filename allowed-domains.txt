@@ -1,0 +1,27 @@
+# Global egress allowlist for the Claude sandbox.
+# One domain per line. Lines are resolved to their A records at container
+# start; everything not on the list (or a project's own list) is dropped.
+# Edit on the host and re-run the wrapper -- no rebuild needed (mounted ro).
+#
+# Keep this list project-NEUTRAL. For domains a single project needs, add a
+# .claude-sandbox/allowed-domains.txt inside that project instead; the wrapper
+# merges it in automatically.
+#
+# If something Claude needs gets blocked, watch for connection failures,
+# add the domain here, and restart the container.
+
+# --- Anthropic (Claude Code core + auth + telemetry) ---
+api.anthropic.com
+console.anthropic.com
+claude.ai
+statsig.anthropic.com
+
+# --- npm (installing/updating tools) ---
+registry.npmjs.org
+
+# --- GitHub (clone, gh, PRs) ---
+github.com
+api.github.com
+codeload.github.com
+objects.githubusercontent.com
+raw.githubusercontent.com
