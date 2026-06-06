@@ -75,6 +75,10 @@ fi
 # fly -- e.g. GH_TOKEN=$(gh-app-installation-token ...) -- with the secret that
 # mints it (an App private key) never leaving the host.
 SANDBOX_ENV="${CLAUDE_SANDBOX_ENV:-$HOME/.config/dynamicalsystem/sandbox}"
+# Accept either a plain file or a directory holding an `env` file, so both
+# ~/.config/dynamicalsystem/sandbox and ~/.config/dynamicalsystem/sandbox/env
+# work without setting CLAUDE_SANDBOX_ENV.
+[ -d "$SANDBOX_ENV" ] && [ -f "$SANDBOX_ENV/env" ] && SANDBOX_ENV="$SANDBOX_ENV/env"
 if [ -f "$SANDBOX_ENV" ]; then
     set -a; . "$SANDBOX_ENV"; set +a
 fi
