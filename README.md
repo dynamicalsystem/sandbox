@@ -38,6 +38,22 @@ First run builds the image (a few minutes). The current directory is mounted at
 `/work`; nothing else of your host is visible. Container is `--rm`, so it is
 gone on exit -- only the project files it changed and your auth persist.
 
+### Jump straight into a project
+
+`install.sh` also drops a `cs()` shell function into your `~/.zshrc` (sourced
+from `cs.zsh`). Give it a project name and it `cd`s into that project under
+`~/Documents/dynamicalsystem/` before launching the sandbox there:
+
+```bash
+cs myproj            # cd ~/Documents/dynamicalsystem/myproj, then sandbox it
+cs myproj --resume   # cd, then pass remaining args through to claude
+cs                   # no name -> sandbox in $PWD, exactly as before
+cs shell / cs rebuild   # subcommands still work, run in $PWD
+```
+
+Override the projects root with `CS_PROJECT_ROOT`. The function calls the
+launcher via `command cs`, so the bare-`cs` behaviour above is unchanged.
+
 ## Why this shape
 
 - **Rootless + daemonless** -- Podman fork-execs the container as your
@@ -60,6 +76,47 @@ Pick one:
   running; `cs` passes it through.
 - **Subscription/OAuth**: just run `cs` and log in once. The login persists in
   the `claude-config` named volume (`/root/.claude`), so no re-auth next time.
+
+Auth lives in two files and both are kept in that volume: credentials
+(`/root/.claude/.credentials.json`) sit in the volume directly, and the OAuth
+account + onboarding state (`/root/.claude.json`, which normally lives in
+`$HOME` *outside* the volume) is symlinked into it by the entrypoint. If you
+checked this repo out before that change, run `cs rebuild` once -- otherwise the
+old image still drops `.claude.json` on exit and re-prompts every run.
+
+### Pushing to GitHub
+
+The sandbox pushes over **HTTPS with a token** -- no ssh key is ever exposed to
+the agent. Give it a **fine-grained PAT** scoped to just the repos you want
+(`Contents: RW`, `Pull requests: RW`), so even a misbehaving agent can't reach
+the rest of your account. Put it in an untracked host-side file:
+
+```bash
+mkdir -p ~/.config/dynamicalsystem
+printf 'GH_TOKEN=github_pat_xxx\n' > ~/.config/dynamicalsystem/sandbox
+chmod 600 ~/.config/dynamicalsystem/sandbox
+```
+
+`cs` *sources* that file and forwards `GH_TOKEN` (and `GITHUB_TOKEN`); the
+entrypoint runs `gh auth setup-git`, so `git push` and `gh pr create` just work.
+Git author identity is read from your host `git config` automatically (override
+with `GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL` in the same file). It is a shell file,
+so **quote any value with spaces** -- `GIT_AUTHOR_NAME="Ada Lovelace"`.
+
+Because the file is *sourced*, the token can also be **minted per run** rather
+than stored -- point `GH_TOKEN` at a command:
+
+```bash
+# ~/.config/dynamicalsystem/sandbox -- mint a short-lived GitHub App
+# installation token on the host; the App private key never enters the sandbox.
+GH_TOKEN=$(my-app-token-minter)
+```
+
+GitHub App installation tokens (`POST /app/installations/{id}/access_tokens`)
+expire in an hour and are repo-scoped, so a leak self-heals -- the only API path
+to programmatically *renew* a credential (personal fine-grained PATs can only be
+created/regenerated in the web UI). The sandbox is indifferent: it just consumes
+`GH_TOKEN`. Either way, `cs rebuild` is needed once to pick up `gh` in the image.
 
 ## Allowlist
 
@@ -94,6 +151,7 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_CONFIG_VOLUME`  | `claude-config` | auth-persistence volume |
 | `CLAUDE_SANDBOX_WORKDIR`        | `$PWD` | host dir to mount at `/work` |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
+| `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / git identity |
 
 Installer knobs: `SANDBOX_HOME`, `SANDBOX_REPO`, `PREFIX` (see `install.sh`).
 

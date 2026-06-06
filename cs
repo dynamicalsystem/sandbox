@@ -70,6 +70,32 @@ if [ -f "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt" ]; then
     PROJECT_MOUNT=(-v "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
 fi
 
+# Optional host-side env file (untracked): a GitHub token for pushing, plus any
+# git-identity overrides. It is *sourced*, so it can also mint a token on the
+# fly -- e.g. GH_TOKEN=$(gh-app-installation-token ...) -- with the secret that
+# mints it (an App private key) never leaving the host.
+SANDBOX_ENV="${CLAUDE_SANDBOX_ENV:-$HOME/.config/dynamicalsystem/sandbox}"
+if [ -f "$SANDBOX_ENV" ]; then
+    set -a; . "$SANDBOX_ENV"; set +a
+fi
+
+# Git identity: fall back to the host's git config so commits made inside the
+# sandbox carry your name/email with no extra setup. (git reads these env vars
+# directly, so no .gitconfig needs to be mounted.)
+: "${GIT_AUTHOR_NAME:=$(git config --get user.name 2>/dev/null || true)}"
+: "${GIT_AUTHOR_EMAIL:=$(git config --get user.email 2>/dev/null || true)}"
+: "${GIT_COMMITTER_NAME:=${GIT_AUTHOR_NAME}}"
+: "${GIT_COMMITTER_EMAIL:=${GIT_AUTHOR_EMAIL}}"
+
+# Forward only the variables that are actually set -- an empty value is skipped
+# so we never clobber an in-container default (or hand git a blank author).
+ENV_ARGS=()
+for _v in ANTHROPIC_API_KEY GH_TOKEN GITHUB_TOKEN \
+          GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL \
+          CLAUDE_SANDBOX_FIREWALL; do
+    [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v")
+done
+
 exec "$ENGINE" run --rm -it \
     --cap-add=NET_ADMIN \
     --hostname claude-sandbox \
@@ -77,7 +103,6 @@ exec "$ENGINE" run --rm -it \
     -v "$CONFIG_VOLUME:/root/.claude" \
     "${ALLOW_MOUNT[@]}" \
     "${PROJECT_MOUNT[@]}" \
-    -e ANTHROPIC_API_KEY \
-    -e CLAUDE_SANDBOX_FIREWALL \
+    "${ENV_ARGS[@]}" \
     -w /work \
     "$IMAGE" "${CMD[@]}"

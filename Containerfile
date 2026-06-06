@@ -19,6 +19,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN npm install -g @anthropic-ai/claude-code
 
+# GitHub CLI -> `gh` for PRs, and `gh auth setup-git` wires git's HTTPS
+# credential helper to GH_TOKEN so `git push` authenticates without ssh keys.
+# Installed from GitHub's apt repo so the arch (arm64 on macOS, amd64 on WSL2)
+# is resolved automatically. Build-time fetch of cli.github.com is fine -- the
+# egress allowlist only applies at *run* time, not during the image build.
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+        -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # Default egress allowlist. The wrapper can mount a host copy over this
 # path, so edits on the host take effect without a rebuild.
 RUN mkdir -p /etc/claude-sandbox
