@@ -83,6 +83,12 @@ if [ -f "$SANDBOX_ENV" ]; then
     set -a; . "$SANDBOX_ENV"; set +a
 fi
 
+# Keep Claude from overwriting the terminal title we set below. Default to
+# disabling it; set CLAUDE_CODE_DISABLE_TERMINAL_TITLE= (empty) to let Claude
+# manage the title instead. Use '=' (not ':=') so an explicit empty value is
+# honoured -- ':=' would clobber it back to 1 and break that opt-out.
+: "${CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1}"
+
 # Git identity: fall back to the host's git config so commits made inside the
 # sandbox carry your name/email with no extra setup. (git reads these env vars
 # directly, so no .gitconfig needs to be mounted.)
@@ -93,12 +99,29 @@ fi
 
 # Forward only the variables that are actually set -- an empty value is skipped
 # so we never clobber an in-container default (or hand git a blank author).
+# Pass the value explicitly (-e NAME=VALUE) rather than the bare -e NAME form:
+# several of these are plain shell vars set via ":=" above (not exported), so
+# the bare form -- which makes podman read from our environment -- would forward
+# nothing for them.
 ENV_ARGS=()
 for _v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN GH_TOKEN GITHUB_TOKEN \
           GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL \
-          CLAUDE_SANDBOX_FIREWALL; do
-    [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v")
+          CLAUDE_CODE_DISABLE_TERMINAL_TITLE CLAUDE_SANDBOX_FIREWALL; do
+    [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v=${!_v}")
 done
+
+# Set the host terminal's title to the project's git repo name, falling back to
+# the launch directory's name when it isn't a repo, so the tab/window is
+# identifiable while Claude runs. Done here in the launcher (not just the cs.zsh
+# wrapper) so it works no matter how `cs` is invoked, and Claude won't clobber it
+# (CLAUDE_CODE_DISABLE_TERMINAL_TITLE is set above). Best-effort: only when
+# stdout is a tty, so piping/redirecting cs stays clean.
+if [ -t 1 ]; then
+    TITLE="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+    TITLE="${TITLE##*/}"
+    [ -n "$TITLE" ] || TITLE="${PROJECT_DIR##*/}"
+    printf '\033]0;%s\007' "$TITLE"
+fi
 
 exec "$ENGINE" run --rm -it \
     --cap-add=NET_ADMIN \

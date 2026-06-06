@@ -35,3 +35,6 @@ cs() {
             ;;
     esac
 }
+
+# The terminal title (repo/dir name) is set by the `cs` launcher itself, so it
+# works however cs is invoked -- nothing to do here.
