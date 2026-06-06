@@ -32,6 +32,13 @@ RUN chmod +x /usr/local/bin/init-firewall.sh /usr/local/bin/entrypoint.sh
 # podman that maps to your unprivileged host user, so:
 #   - iptables can program the firewall (NET_ADMIN within the userns)
 #   - files written to the /work bind mount come out owned by you on the host
+#
+# Claude Code refuses --dangerously-skip-permissions as root unless told it is
+# sandboxed. This container genuinely is the sandbox, so declare it. The flag
+# is source-confirmed but undocumented -- revisit if a future Claude version
+# changes the check (alternative: non-root user + keep-id + sudo firewall).
+ENV IS_SANDBOX=1
+
 WORKDIR /work
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["claude"]
