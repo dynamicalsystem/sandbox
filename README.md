@@ -31,6 +31,7 @@ cd ~/some/project        # the dir Claude will be able to see
 cs                       # claude --dangerously-skip-permissions, sandboxed
 cs --version             # args pass straight through to claude
 cs shell                 # interactive bash inside the sandbox
+cs rebuild               # rebuild the image (after a git pull or script edit)
 ```
 
 First run builds the image (a few minutes). The current directory is mounted at
@@ -109,8 +110,10 @@ performance.
 - **No ipset.** The podman-machine kernel ships no `ipset`/`xt_set` module, so
   the firewall uses plain per-IP iptables rules. If you ever lift Anthropic's
   devcontainer firewall verbatim, it will not work here as-is.
-- **Rebuild after editing the Containerfile**: `podman rmi claude-sandbox:latest`
-  (next `cs` rebuilds). Allowlist edits need no rebuild -- they are mounted.
+- **Rebuild after editing baked files.** `Containerfile`, `init-firewall.sh`,
+  and `entrypoint.sh` are baked into the image; `cs` only auto-builds when the
+  image is *absent*, so after editing them (or `git pull`) run `cs rebuild` or
+  you will silently run a stale image. Allowlist edits are mounted -- no rebuild.
 - **Firewall fail-closed.** If iptables setup fails partway, egress ends up
   blocked, not open -- but the entrypoint's warning text may read "NOT
   restricted". If you see that warning, treat the network state as untrusted and

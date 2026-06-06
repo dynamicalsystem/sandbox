@@ -5,6 +5,7 @@
 #   cs                  # claude --dangerously-skip-permissions, in $PWD
 #   cs <args...>        # claude <args...>
 #   cs shell            # interactive bash in the sandbox
+#   cs rebuild          # rebuild the image (after editing scripts / updating)
 #
 # The current directory is mounted at /work; nothing else of your host is
 # visible. Egress is limited to the global allowlist plus, if present, the
@@ -32,6 +33,12 @@ SANDBOX_DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
 if ! command -v "$ENGINE" >/dev/null 2>&1; then
     echo "error: '$ENGINE' not found on PATH" >&2
     exit 1
+fi
+
+# Force a rebuild (after editing baked scripts or pulling an update).
+if [ "${1:-}" = "rebuild" ]; then
+    echo "[sandbox] rebuilding $IMAGE ..." >&2
+    exec "$ENGINE" build --no-cache -t "$IMAGE" "$SANDBOX_DIR"
 fi
 
 # Build on first use (or after you edit the Containerfile).
