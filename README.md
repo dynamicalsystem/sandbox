@@ -72,17 +72,33 @@ launcher via `command cs`, so the bare-`cs` behaviour above is unchanged.
 
 Pick one:
 
+- **Subscription OAuth token** (recommended): mint a long-lived (~1 year) token
+  once on the host and forward it, exactly like `GH_TOKEN`. No volume state, no
+  re-auth, survives `--rm`:
+
+  ```bash
+  claude setup-token          # prints a sk-ant-oat... token (needs a subscription)
+  printf 'CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat...\n' >> ~/.config/dynamicalsystem/sandbox
+  ```
+
+  `cs` forwards `CLAUDE_CODE_OAUTH_TOKEN` into the container, so every launch is
+  authenticated with zero web-OAuth roundtrip. (Don't have `claude` on the host?
+  Run `cs shell` once, run `claude setup-token` inside, copy the token out.)
 - **API key** (simplest, headless): `export ANTHROPIC_API_KEY=...` before
   running; `cs` passes it through.
-- **Subscription/OAuth**: just run `cs` and log in once. The login persists in
-  the `claude-config` named volume (`/root/.claude`), so no re-auth next time.
 
-Auth lives in two files and both are kept in that volume: credentials
-(`/root/.claude/.credentials.json`) sit in the volume directly, and the OAuth
-account + onboarding state (`/root/.claude.json`, which normally lives in
-`$HOME` *outside* the volume) is symlinked into it by the entrypoint. If you
-checked this repo out before that change, run `cs rebuild` once -- otherwise the
-old image still drops `.claude.json` on exit and re-prompts every run.
+Both are forwarded the same stateless way as the GitHub token -- the secret
+stays in the host-side file (`~/.config/dynamicalsystem/sandbox`) and is handed
+in as an env var, so nothing auth-related needs to persist in the volume.
+
+> **Why not just log in interactively?** An interactive `claude` login writes the
+> OAuth *account record* to `/root/.claude.json` (at `$HOME`, **outside** the
+> `claude-config` volume). Claude Code rewrites that file atomically (`rename()`),
+> which defeats any symlink-into-the-volume trick, so on a `--rm` container the
+> account record is dropped and you get the web-OAuth prompt **every launch** --
+> even though the credentials file persisted. The forwarded token sidesteps all
+> of this. If you want interactive login to stick instead, mount the volume at
+> `/root` rather than `/root/.claude` so `.claude.json` lands in it for real.
 
 ### Pushing to GitHub
 

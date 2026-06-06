@@ -90,7 +90,7 @@ fi
 # Forward only the variables that are actually set -- an empty value is skipped
 # so we never clobber an in-container default (or hand git a blank author).
 ENV_ARGS=()
-for _v in ANTHROPIC_API_KEY GH_TOKEN GITHUB_TOKEN \
+for _v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN GH_TOKEN GITHUB_TOKEN \
           GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL \
           CLAUDE_SANDBOX_FIREWALL; do
     [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v")

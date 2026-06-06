@@ -3,12 +3,13 @@
 # command the wrapper asked for (claude / bash / ...).
 set -euo pipefail
 
-# Persist ~/.claude.json across runs. Claude Code keeps OAuth *credentials* in
-# /root/.claude/ (the named config volume, so those already survive), but the
-# OAuth account + onboarding state lives in /root/.claude.json, which sits
-# OUTSIDE that volume and is otherwise wiped on every --rm -- the cause of
-# re-auth on each launch. Symlink it into the volume so auth fully persists.
-ln -sf /root/.claude/.claude.json /root/.claude.json
+# Anthropic auth is forwarded statelessly via CLAUDE_CODE_OAUTH_TOKEN (see `cs`
+# and the README), exactly like GH_TOKEN below -- nothing to persist in the
+# volume, nothing to re-auth. We deliberately do NOT symlink /root/.claude.json
+# into the volume: Claude Code writes that file atomically (write-temp +
+# rename()), and rename() replaces the symlink with a real file in the ephemeral
+# overlay instead of writing through it, so the symlink never actually persisted
+# and the OAuth account record was dropped on every --rm.
 
 if [ "${CLAUDE_SANDBOX_FIREWALL:-1}" = "1" ]; then
     if /usr/local/bin/init-firewall.sh; then
