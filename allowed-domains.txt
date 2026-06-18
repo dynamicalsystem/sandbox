@@ -25,3 +25,13 @@ api.github.com
 codeload.github.com
 objects.githubusercontent.com
 raw.githubusercontent.com
+
+# --- Python tooling (uv) ---
+# `uv python install` pulls interpreters from python-build-standalone release
+# assets on GitHub (github.com / objects.githubusercontent.com, allowed above).
+# astral.sh covers the uv installer and `uv self update`; pypi.org and
+# files.pythonhosted.org are needed for `uv pip install` / `uv add` to fetch
+# packages. Drop the two PyPI lines if you only want the bare interpreter.
+astral.sh
+pypi.org
+files.pythonhosted.org

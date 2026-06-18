@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN npm install -g @anthropic-ai/claude-code
 
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
 # GitHub CLI -> `gh` for PRs, and `gh auth setup-git` wires git's HTTPS
 # credential helper to GH_TOKEN so `git push` authenticates without ssh keys.
 # Installed from GitHub's apt repo so the arch (arm64 on macOS, amd64 on WSL2)
