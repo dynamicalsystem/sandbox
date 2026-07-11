@@ -23,6 +23,9 @@ Durable observations and cross-loop triggers for the sandbox product.
 - Kimi Code CLI uses `rg` and `fd`/`fdfind` and tries to bootstrap them over the
   network when missing, which fails against the allowlist. `ripgrep` and
   `fd-find` are now pre-installed in the image. Added in PR #7.
+- Container hostname was hard-coded to `claude-sandbox` even when running Kimi.
+  Now uses `claude-sandbox` for Claude, `kimi-sandbox` for Kimi, and `sandbox`
+  for the shell subcommand. Added in PR #8.
 
 ## Triggers
 
