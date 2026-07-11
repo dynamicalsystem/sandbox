@@ -27,6 +27,31 @@ set -euo pipefail
 # or a real /login whose .credentials.json persists in the volume on its own.
 [ -e /root/.claude.json ] || printf '{"hasCompletedOnboarding":true}\n' > /root/.claude.json
 
+# Kimi Code CLI does not read API keys from shell environment variables;
+# credentials live in ~/.kimi-code/config.toml. If KIMI_API_KEY is forwarded and
+# no provider is configured yet, seed a minimal provider/model so the user can
+# start immediately without running /login or /provider add inside the TUI.
+if [ -n "${KIMI_API_KEY:-}" ]; then
+    if [ ! -f /root/.kimi-code/config.toml ] || ! grep -q '^\[providers\.' /root/.kimi-code/config.toml 2>/dev/null; then
+        mkdir -p /root/.kimi-code
+        {
+            printf '[providers.kimi]\n'
+            printf 'type = "kimi"\n'
+            printf 'base_url = "%s"\n' "${KIMI_BASE_URL:-https://api.kimi.com/coding/v1}"
+            printf 'api_key = "%s"\n' "$KIMI_API_KEY"
+            printf '\n'
+            printf '[models."kimi-for-coding"]\n'
+            printf 'provider = "kimi"\n'
+            printf 'model = "kimi-for-coding"\n'
+            printf 'max_context_size = 262144\n'
+            printf 'capabilities = [ "thinking", "always_thinking", "image_in", "video_in", "tool_use" ]\n'
+            printf '\n'
+            printf 'default_model = "kimi-for-coding"\n'
+        } > /root/.kimi-code/config.toml
+        chmod 600 /root/.kimi-code/config.toml
+    fi
+fi
+
 if [ "${CLAUDE_SANDBOX_FIREWALL:-1}" = "1" ]; then
     if /usr/local/bin/init-firewall.sh; then
         :

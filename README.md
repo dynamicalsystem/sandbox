@@ -102,6 +102,20 @@ in as an env var, so nothing auth-related needs to persist in the volume.
 > of this. If you want interactive login to stick instead, mount the volume at
 > `/root` rather than `/root/.claude` so `.claude.json` lands in it for real.
 
+### Kimi auth
+
+Kimi Code CLI does not read API keys from shell environment variables directly.
+To avoid running `/login` or `/provider add` every launch, add a Kimi API key to
+the same host-side env file:
+
+```bash
+printf 'KIMI_API_KEY=sk-kimi-xxx\n' >> ~/.config/dynamicalsystem/sandbox
+```
+
+The entrypoint auto-seeds `~/.kimi-code/config.toml` from `KIMI_API_KEY` on the
+first run (or if the config has no provider), so `cs kimi` starts already
+authenticated. Set `KIMI_BASE_URL` if you use a custom endpoint.
+
 ### Pushing to GitHub
 
 The sandbox pushes over **HTTPS with a token** -- no ssh key is ever exposed to
