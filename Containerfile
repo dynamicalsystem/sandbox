@@ -9,12 +9,18 @@ FROM node:22-bookworm-slim
 #                    podman-machine kernel has no ipset/xt_set module)
 # dnsutils (dig)  -> resolve allowlist domains to IPs at startup
 # git/curl/ca-certs -> normal agent needs
+# ripgrep/fd-find -> search/file-finder tools used by Kimi Code (and useful for
+#                    Claude Code); pre-install so agents don't try to bootstrap
+#                    them over the network and hit the allowlist.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         iptables \
         dnsutils \
         ca-certificates \
         curl \
         git \
+        ripgrep \
+        fd-find \
+    && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && rm -rf /var/lib/apt/lists/*
 
 # Pinned, not floating. Unpinned, every `cs rebuild` silently jumps to npm's
