@@ -13,6 +13,10 @@ Durable observations and cross-loop triggers for the sandbox product.
 - Kimi Code CLI 0.23.5 stores config/credentials under `~/.kimi-code`, not
   `~/.kimi`. The `kimi-config` volume was mounted at the wrong path, so `/login`
   credentials were lost on container exit. Fixed in PR #4.
+- Kimi Code CLI does not read `KIMI_API_KEY` from shell env vars. The entrypoint
+  now auto-seeds `~/.kimi-code/config.toml` from `KIMI_API_KEY` when no provider
+  exists, so `cs kimi` starts authenticated without `/login` or `/provider add`.
+  Added in PR #5.
 
 ## Triggers
 
