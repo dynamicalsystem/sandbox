@@ -14,27 +14,18 @@ set -euo pipefail
 #
 # We do NOT symlink it into the volume: Claude writes it atomically (write-temp +
 # rename()), and rename() replaces a symlink with a real file in the ephemeral
-# overlay instead of writing through it, so the account record was dropped on
-# every --rm. Instead we restore it by plain copy before handoff.
+# overlay instead of writing through it, so it never persisted. Instead we seed
+# it before handoff.
 #
-# Claude backs this file up (into backups/) before every atomic rewrite, so the
-# volume accumulates copies -- but a broken/minimal session leaves a tiny stub,
-# so "newest backup" is not safe to trust. Scan the persisted copies newest-first
-# and pick the first that actually carries the account record (oauthAccount);
-# fall back to a minimal onboarding stub. Auth still comes from the token -- this
-# only satisfies the interactive onboarding gate. Once login works again, good
-# sessions write full backups, so the restore source stays fresh on its own.
-if [ ! -e /root/.claude.json ]; then
-    src=""
-    for f in $(ls -t /root/.claude/.claude.json /root/.claude/backups/.claude.json.backup.* 2>/dev/null || true); do
-        if grep -q '"oauthAccount"' "$f" 2>/dev/null; then src="$f"; break; fi
-    done
-    if [ -n "$src" ]; then
-        cp "$src" /root/.claude.json
-    else
-        printf '{"hasCompletedOnboarding":true}\n' > /root/.claude.json
-    fi
-fi
+# Seed ONLY the onboarding flag -- deliberately NOT a stored oauthAccount record.
+# Asserting "logged in as <account>" when the matching credential in the volume
+# (/root/.claude/.credentials.json) has expired makes the interactive TUI 401
+# ("please run /login") instead of using the forwarded token or prompting a fresh
+# login. So we claim onboarding-done and nothing else; auth is left entirely to
+# CLAUDE_CODE_OAUTH_TOKEN (reliable headless; per docs also the TUI, though
+# interactive token support is flaky upstream -- see anthropics/claude-code#69753)
+# or a real /login whose .credentials.json persists in the volume on its own.
+[ -e /root/.claude.json ] || printf '{"hasCompletedOnboarding":true}\n' > /root/.claude.json
 
 if [ "${CLAUDE_SANDBOX_FIREWALL:-1}" = "1" ]; then
     if /usr/local/bin/init-firewall.sh; then
