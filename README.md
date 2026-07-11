@@ -116,6 +116,20 @@ The entrypoint auto-seeds `~/.kimi-code/config.toml` from `KIMI_API_KEY` on the
 first run (or if the config has no provider), so `cs kimi` starts already
 authenticated. Set `KIMI_BASE_URL` if you use a custom endpoint.
 
+### Kimi skills and AGENTS.md
+
+Host-managed Kimi skills and a global `AGENTS.md` are shared into the container
+read-only while auth/config/session state stays in the `kimi-config` volume:
+
+```bash
+mkdir -p ~/.kimi-code/skills
+ln -s ~/Documents/dynamicalsystem/augment/<github-username>-AGENTS.md ~/.kimi-code/AGENTS.md
+```
+
+`cs kimi` bind mounts `~/.kimi-code/skills/` to `/root/.kimi-code/skills/` and
+`~/.kimi-code/AGENTS.md` to `/root/.kimi-code/AGENTS.md` when they exist. Set
+`KIMI_HOST_DIR` to override the host path.
+
 ### Pushing to GitHub
 
 The sandbox pushes over **HTTPS with a token** -- no ssh key is ever exposed to
@@ -182,6 +196,7 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_IMAGE`          | `claude-sandbox:latest` | image tag |
 | `CLAUDE_SANDBOX_CONFIG_VOLUME`      | `claude-config` | Claude auth-persistence volume |
 | `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume (mounted at `/root/.kimi-code`) |
+| `KIMI_HOST_DIR`                     | `~/.kimi-code` | host path for Kimi skills/AGENTS.md bind mounts |
 | `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |

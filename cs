@@ -80,6 +80,18 @@ if [ -f "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt" ]; then
     PROJECT_MOUNT=(-v "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
 fi
 
+# Host-side Kimi skills / AGENTS.md: share host-managed skills and global prompt
+# with the container while keeping auth/config/session state in the named volume.
+KIMI_HOST_DIR="${KIMI_HOST_DIR:-$HOME/.kimi-code}"
+KIMI_SKILLS_MOUNT=()
+if [ -d "$KIMI_HOST_DIR/skills" ]; then
+    KIMI_SKILLS_MOUNT=(-v "$KIMI_HOST_DIR/skills:/root/.kimi-code/skills:ro")
+fi
+KIMI_AGENTS_MOUNT=()
+if [ -L "$KIMI_HOST_DIR/AGENTS.md" ] || [ -f "$KIMI_HOST_DIR/AGENTS.md" ]; then
+    KIMI_AGENTS_MOUNT=(-v "$KIMI_HOST_DIR/AGENTS.md:/root/.kimi-code/AGENTS.md:ro")
+fi
+
 # Optional host-side env file (untracked): a GitHub token for pushing, plus any
 # git-identity overrides. It is *sourced*, so it can also mint a token on the
 # fly -- e.g. GH_TOKEN=$(gh-app-installation-token ...) -- with the secret that
@@ -147,6 +159,8 @@ exec "$ENGINE" run --rm -it \
     -v "$PROJECT_DIR:/work" \
     -v "$CONFIG_VOLUME:/root/.claude" \
     -v "$KIMI_CONFIG_VOLUME:/root/.kimi-code" \
+    "${KIMI_SKILLS_MOUNT[@]}" \
+    "${KIMI_AGENTS_MOUNT[@]}" \
     "${ALLOW_MOUNT[@]}" \
     "${PROJECT_MOUNT[@]}" \
     "${ENV_ARGS[@]}" \
