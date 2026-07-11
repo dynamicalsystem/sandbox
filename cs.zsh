@@ -8,17 +8,18 @@
 #   cs                  # sandbox in $PWD (claude --dangerously-skip-permissions)
 #   cs myproj           # cd ~/Documents/dynamicalsystem/myproj, then sandbox there
 #   cs myproj --resume  # cd, then pass the remaining args through to claude
+#   cs kimi             # sandbox in $PWD (kimi --yolo)
 #   cs shell            # interactive shell in the sandbox ($PWD)
 #   cs rebuild          # rebuild the image
 #
 # Override the projects root with CS_PROJECT_ROOT. Portable across zsh and bash.
-# (A project literally named "shell" or "rebuild" is shadowed by those
+# (A project literally named "shell", "rebuild", or "kimi" is shadowed by those
 # subcommands -- run the launcher from inside it instead.)
 
 cs() {
     local base="${CS_PROJECT_ROOT:-$HOME/Documents/dynamicalsystem}"
     case "${1:-}" in
-        ''|-*|shell|rebuild)
+        ''|-*|shell|rebuild|kimi)
             # No project argument -- run the launcher in the current directory.
             command cs "$@"
             ;;

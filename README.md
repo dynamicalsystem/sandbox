@@ -30,6 +30,8 @@ From a local checkout instead: `./install.sh`.
 cd ~/some/project        # the dir Claude will be able to see
 cs                       # claude --dangerously-skip-permissions, sandboxed
 cs --version             # args pass straight through to claude
+cs kimi                  # kimi --yolo, sandboxed (Kimi Code CLI)
+cs kimi --version        # args pass straight through to kimi
 cs shell                 # interactive bash inside the sandbox
 cs rebuild               # rebuild the image (after a git pull or script edit)
 ```
@@ -164,8 +166,9 @@ share the machine kernel but cannot see each other's files.
 |-----|---------|--------|
 | `CLAUDE_SANDBOX_FIREWALL`       | `1` | set `0` to disable the egress allowlist |
 | `CLAUDE_SANDBOX_IMAGE`          | `claude-sandbox:latest` | image tag |
-| `CLAUDE_SANDBOX_CONFIG_VOLUME`  | `claude-config` | auth-persistence volume |
-| `CLAUDE_SANDBOX_WORKDIR`        | `$PWD` | host dir to mount at `/work` |
+| `CLAUDE_SANDBOX_CONFIG_VOLUME`      | `claude-config` | Claude auth-persistence volume |
+| `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume |
+| `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |
 
