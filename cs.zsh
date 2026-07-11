@@ -29,15 +29,26 @@ cs() {
             ;;
     esac
 
+    local warehouse_root="${CLAUDE_SANDBOX_WAREHOUSE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/dynamicalsystem/warehouse}"
+
     case "${1:-}" in
         ''|-*|shell|rebuild)
             # No project argument -- run the launcher in the current directory.
             command cs "${prefix[@]}" "$@"
             ;;
         *)
-            # First remaining argument names a project under $base: cd in, then launch.
-            if [ -d "$base/$1" ]; then
-                cd "$base/$1" || return
+            # First remaining argument names a project under $base. Prefer its
+            # warehouse main/ worktree if one exists, otherwise fall back to the
+            # plain project directory.
+            local repo="$base/$1"
+            local target="$repo"
+            if [ -d "$warehouse_root/$1/main" ]; then
+                target="$warehouse_root/$1/main"
+            elif [ -d "$repo.warehouse/main" ]; then
+                target="$repo.warehouse/main"
+            fi
+            if [ -d "$target" ]; then
+                cd "$target" || return
                 shift
                 command cs "${prefix[@]}" "$@"
             else

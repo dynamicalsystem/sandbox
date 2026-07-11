@@ -78,10 +78,57 @@ if [ -f "$SANDBOX_DIR/allowed-domains.txt" ]; then
     ALLOW_MOUNT=(-v "$SANDBOX_DIR/allowed-domains.txt:/etc/claude-sandbox/allowed-domains.txt:ro")
 fi
 
-# Per-project allowlist: merged in by the firewall if the launch dir has one.
+# Warehouse mode: if the project has a bare clone + main/ooda worktrees, mount the
+# whole warehouse at the same absolute path inside the container (git worktree
+# metadata stores absolute paths) and start the shell in <warehouse>/main.
+# Otherwise fall back to mounting the launch dir at /work.
+WAREHOUSE_ROOT="${CLAUDE_SANDBOX_WAREHOUSE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/dynamicalsystem/warehouse}"
+REPO_ROOT="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+WAREHOUSE_PATH=""
+
+# Case 1: the launch directory is already inside a warehouse worktree
+# (<warehouse>/<product>/main or .../ooda). The warehouse root is the parent dir.
+if [ -n "$REPO_ROOT" ]; then
+    _warehouse_candidate="$(dirname "$REPO_ROOT")"
+    _worktree_name="${REPO_ROOT##*/}"
+    if [ "$_worktree_name" = "main" ] || [ "$_worktree_name" = "ooda" ]; then
+        if [ -d "$_warehouse_candidate/.bare" ] \
+           && [ -d "$_warehouse_candidate/main" ] \
+           && [ -d "$_warehouse_candidate/ooda" ]; then
+            WAREHOUSE_PATH="$_warehouse_candidate"
+        fi
+    fi
+fi
+
+# Case 2: the launch directory is a normal clone; look for an external warehouse.
+if [ -z "$WAREHOUSE_PATH" ]; then
+    [ -n "$REPO_ROOT" ] || REPO_ROOT="$PROJECT_DIR"
+    PRODUCT_NAME="${REPO_ROOT##*/}"
+    if [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/.bare" ] \
+       && [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/main" ] \
+       && [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/ooda" ]; then
+        WAREHOUSE_PATH="$WAREHOUSE_ROOT/$PRODUCT_NAME"
+    elif [ -d "$REPO_ROOT.warehouse/.bare" ] \
+         && [ -d "$REPO_ROOT.warehouse/main" ] \
+         && [ -d "$REPO_ROOT.warehouse/ooda" ]; then
+        WAREHOUSE_PATH="$REPO_ROOT.warehouse"
+    fi
+fi
+
+WORK_MOUNT=()
+WORK_DIR="/work"
 PROJECT_MOUNT=()
-if [ -f "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt" ]; then
-    PROJECT_MOUNT=(-v "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
+if [ -n "$WAREHOUSE_PATH" ]; then
+    WORK_MOUNT=(-v "$WAREHOUSE_PATH:$WAREHOUSE_PATH")
+    WORK_DIR="$WAREHOUSE_PATH/main"
+    if [ -f "$WAREHOUSE_PATH/main/.claude-sandbox/allowed-domains.txt" ]; then
+        PROJECT_MOUNT=(-v "$WAREHOUSE_PATH/main/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
+    fi
+else
+    WORK_MOUNT=(-v "$PROJECT_DIR:/work")
+    if [ -f "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt" ]; then
+        PROJECT_MOUNT=(-v "$PROJECT_DIR/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
+    fi
 fi
 
 # Host-side Kimi skills / AGENTS.md: share host-managed skills and global prompt
@@ -160,7 +207,7 @@ fi
 exec "$ENGINE" run --rm -it \
     --cap-add=NET_ADMIN \
     --hostname "$CONTAINER_HOSTNAME" \
-    -v "$PROJECT_DIR:/work" \
+    "${WORK_MOUNT[@]}" \
     -v "$CONFIG_VOLUME:/root/.claude" \
     -v "$KIMI_CONFIG_VOLUME:/root/.kimi-code" \
     "${KIMI_SKILLS_MOUNT[@]}" \
@@ -168,5 +215,5 @@ exec "$ENGINE" run --rm -it \
     "${ALLOW_MOUNT[@]}" \
     "${PROJECT_MOUNT[@]}" \
     "${ENV_ARGS[@]}" \
-    -w /work \
+    -w "$WORK_DIR" \
     "$IMAGE" "${CMD[@]}"

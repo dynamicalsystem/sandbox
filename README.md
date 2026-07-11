@@ -56,6 +56,24 @@ cs shell / cs rebuild   # subcommands still work, run in $PWD
 Override the projects root with `CS_PROJECT_ROOT`. The function calls the
 launcher via `command cs`, so the bare-`cs` behaviour above is unchanged.
 
+### Warehouse mode (OODA)
+
+If a project has a Git warehouse -- a bare clone with `main/` and `ooda/`
+worktrees -- `cs` detects it and mounts the whole warehouse into the container
+at the same absolute path it has on the host. The shell starts in
+`<warehouse>/main`, so `git worktree list` inside the container sees both
+branches and the control plane persists across container restarts.
+
+Canonical warehouse root:
+
+```
+$XDG_DATA_HOME/dynamicalsystem/warehouse/<product>/
+```
+
+with the usual fallback to `~/.local/share/dynamicalsystem/warehouse/<product>/`
+when `$XDG_DATA_HOME` is unset. Existing setups using a sibling
+`<project>.warehouse/` directory also continue to work.
+
 ## Why this shape
 
 - **Rootless + daemonless** -- Podman fork-execs the container as your
@@ -197,7 +215,9 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_CONFIG_VOLUME`      | `claude-config` | Claude auth-persistence volume |
 | `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume (mounted at `/root/.kimi-code`) |
 | `KIMI_HOST_DIR`                     | `~/.kimi-code` | host path for Kimi skills/AGENTS.md bind mounts |
-| `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` |
+| `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` (in non-warehouse mode) |
+| `CLAUDE_SANDBOX_WAREHOUSE_ROOT`     | `${XDG_DATA_HOME:-$HOME/.local/share}/dynamicalsystem/warehouse` | directory to search for `<product>/.bare`, `main/`, `ooda/` |
+| `XDG_DATA_HOME`                     | unset (defaults to `~/.local/share`) | fallback base for `CLAUDE_SANDBOX_WAREHOUSE_ROOT` |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |
 
