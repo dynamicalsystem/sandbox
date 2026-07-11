@@ -54,6 +54,7 @@ fi
 if [ "${1:-}" = "shell" ]; then
     shift
     CMD=(bash "$@")
+    CONTAINER_HOSTNAME="sandbox"
 elif [ "${1:-}" = "kimi" ]; then
     shift
     if [ "$#" -eq 0 ]; then
@@ -61,10 +62,13 @@ elif [ "${1:-}" = "kimi" ]; then
     else
         CMD=(kimi "$@")
     fi
+    CONTAINER_HOSTNAME="kimi-sandbox"
 elif [ "$#" -eq 0 ]; then
     CMD=(claude --dangerously-skip-permissions)
+    CONTAINER_HOSTNAME="claude-sandbox"
 else
     CMD=(claude "$@")
+    CONTAINER_HOSTNAME="claude-sandbox"
 fi
 
 # Global allowlist: mount the host copy over the baked-in one so edits apply
@@ -155,7 +159,7 @@ fi
 
 exec "$ENGINE" run --rm -it \
     --cap-add=NET_ADMIN \
-    --hostname claude-sandbox \
+    --hostname "$CONTAINER_HOSTNAME" \
     -v "$PROJECT_DIR:/work" \
     -v "$CONFIG_VOLUME:/root/.claude" \
     -v "$KIMI_CONFIG_VOLUME:/root/.kimi-code" \
