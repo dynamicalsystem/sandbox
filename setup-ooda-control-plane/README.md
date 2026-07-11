@@ -2,7 +2,7 @@
 loop: setup-ooda-control-plane
 product: sandbox
 owner: dynamicalsystem
-status: Act
+status: Closed
 parent: null
 blocked-by: []
 worktrees:
@@ -11,11 +11,11 @@ prs: []
 triggers: []
 ---
 
-# Setup OODA Control Plane
+# [ARCHIVED] Setup OODA Control Plane
 
 ## Status
 
-Act
+Closed
 
 **Owner:** dynamicalsystem
 
@@ -73,4 +73,4 @@ Tests:
 
 Tests:
 - [x] `git push origin ooda` succeeds.
-- [ ] The remote `ooda` branch is visible via `git ls-remote origin ooda`.
+- [x] The remote `ooda` branch is visible via `git ls-remote origin ooda`.
