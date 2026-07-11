@@ -167,7 +167,7 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_FIREWALL`       | `1` | set `0` to disable the egress allowlist |
 | `CLAUDE_SANDBOX_IMAGE`          | `claude-sandbox:latest` | image tag |
 | `CLAUDE_SANDBOX_CONFIG_VOLUME`      | `claude-config` | Claude auth-persistence volume |
-| `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume |
+| `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume (mounted at `/root/.kimi-code`) |
 | `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |
