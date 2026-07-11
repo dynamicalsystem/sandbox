@@ -9,6 +9,7 @@ worktrees:
   - /Users/dynamicalsystem/Documents/dynamicalsystem/sandbox.warehouse/main
 prs:
   - https://github.com/dynamicalsystem/sandbox/pull/9
+  - https://github.com/dynamicalsystem/sandbox/pull/10
 triggers: []
 ---
 
