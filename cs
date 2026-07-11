@@ -89,13 +89,11 @@ fi
 # honoured -- ':=' would clobber it back to 1 and break that opt-out.
 : "${CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1}"
 
-# Recent Claude Code (>= 2.1.187) captures mouse clicks/drag in fullscreen, which
-# steals click-drag from the terminal and breaks native text selection/copy.
-# Default to the scroll-only mouse mode (CLAUDE_CODE_DISABLE_MOUSE_CLICKS, added
-# 2.1.195) so select/copy works; scroll still works. Set it empty in your env
-# file to opt back into Claude's click-to-interact behaviour. '=' (not ':=') so
-# an explicit empty value is honoured.
-: "${CLAUDE_CODE_DISABLE_MOUSE_CLICKS=1}"
+# Do NOT force CLAUDE_CODE_DISABLE_MOUSE_CLICKS. On the pinned 2.1.206 the mouse
+# is not grabbed by default, so Terminal.app native text selection works -- same
+# as the host. Forcing =1 put 2.1.206 into scroll-tracking mode, which
+# Terminal.app treats as "app owns the mouse", breaking selection. It is still
+# forwarded if you set it yourself in the env file, but left unset by default.
 
 # Git identity: fall back to the host's git config so commits made inside the
 # sandbox carry your name/email with no extra setup. (git reads these env vars
