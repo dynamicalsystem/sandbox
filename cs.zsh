@@ -9,6 +9,7 @@
 #   cs myproj           # cd ~/Documents/dynamicalsystem/myproj, then sandbox there
 #   cs myproj --resume  # cd, then pass the remaining args through to claude
 #   cs kimi             # sandbox in $PWD (kimi --yolo)
+#   cs kimi myproj      # cd ~/Documents/dynamicalsystem/myproj, then kimi --yolo
 #   cs shell            # interactive shell in the sandbox ($PWD)
 #   cs rebuild          # rebuild the image
 #
@@ -18,17 +19,27 @@
 
 cs() {
     local base="${CS_PROJECT_ROOT:-$HOME/Documents/dynamicalsystem}"
+    local prefix=()
+
+    # Optional agent subcommand (e.g. `kimi`) can precede the project name.
     case "${1:-}" in
-        ''|-*|shell|rebuild|kimi)
+        kimi)
+            prefix+=("$1")
+            shift
+            ;;
+    esac
+
+    case "${1:-}" in
+        ''|-*|shell|rebuild)
             # No project argument -- run the launcher in the current directory.
-            command cs "$@"
+            command cs "${prefix[@]}" "$@"
             ;;
         *)
-            # First argument names a project under $base: cd in, then launch.
+            # First remaining argument names a project under $base: cd in, then launch.
             if [ -d "$base/$1" ]; then
                 cd "$base/$1" || return
                 shift
-                command cs "$@"
+                command cs "${prefix[@]}" "$@"
             else
                 echo "cs: no such project: $base/$1" >&2
                 return 1
