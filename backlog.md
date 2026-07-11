@@ -10,6 +10,9 @@ Durable observations and cross-loop triggers for the sandbox product.
 - Kimi Code CLI needs `auth.kimi.com`, `api.kimi.com`, and `models.dev` in the
   egress allowlist for OAuth, API calls, and provider catalog lookup. Added to
   the global allowlist in PR #3.
+- Kimi Code CLI 0.23.5 stores config/credentials under `~/.kimi-code`, not
+  `~/.kimi`. The `kimi-config` volume was mounted at the wrong path, so `/login`
+  credentials were lost on container exit. Fixed in PR #4.
 
 ## Triggers
 
