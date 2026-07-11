@@ -17,6 +17,9 @@ Durable observations and cross-loop triggers for the sandbox product.
   now auto-seeds `~/.kimi-code/config.toml` from `KIMI_API_KEY` when no provider
   exists, so `cs kimi` starts authenticated without `/login` or `/provider add`.
   Added in PR #5.
+- Host `~/.kimi-code/skills/` and `~/.kimi-code/AGENTS.md` are now shared into the
+  container read-only so Kimi loads host-managed skills and global prompt while
+  auth/config/session state stays in the `kimi-config` volume. Added in PR #6.
 
 ## Triggers
 
