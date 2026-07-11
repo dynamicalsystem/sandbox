@@ -20,6 +20,9 @@ Durable observations and cross-loop triggers for the sandbox product.
 - Host `~/.kimi-code/skills/` and `~/.kimi-code/AGENTS.md` are now shared into the
   container read-only so Kimi loads host-managed skills and global prompt while
   auth/config/session state stays in the `kimi-config` volume. Added in PR #6.
+- Kimi Code CLI uses `rg` and `fd`/`fdfind` and tries to bootstrap them over the
+  network when missing, which fails against the allowlist. `ripgrep` and
+  `fd-find` are now pre-installed in the image. Added in PR #7.
 
 ## Triggers
 
