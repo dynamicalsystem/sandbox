@@ -35,3 +35,8 @@ raw.githubusercontent.com
 astral.sh
 pypi.org
 files.pythonhosted.org
+
+# --- Kimi Code CLI (OAuth + API + provider catalog) ---
+auth.kimi.com
+api.kimi.com
+models.dev
