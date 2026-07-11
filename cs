@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Run Claude Code inside a rootless-Podman sandbox.
+# Run Claude Code or Kimi Code inside a rootless-Podman sandbox.
 #
 # Usage:
 #   cs                  # claude --dangerously-skip-permissions, in $PWD
 #   cs <args...>        # claude <args...>
+#   cs kimi             # kimi --yolo, in $PWD
+#   cs kimi <args...>   # kimi <args...>
 #   cs shell            # interactive bash in the sandbox
 #   cs rebuild          # rebuild the image (after editing scripts / updating)
 #
 # The current directory is mounted at /work; nothing else of your host is
 # visible. Egress is limited to the global allowlist plus, if present, the
-# launch dir's .claude-sandbox/allowed-domains.txt. Auth (~/.claude) persists
-# in a named volume across runs.
+# launch dir's .claude-sandbox/allowed-domains.txt. Auth (~/.claude and
+# ~/.kimi) persists in named volumes across runs.
 #
 # Cross-platform: runs under zsh/bash on macOS and bash in Windows/WSL2.
 set -euo pipefail
@@ -18,6 +20,7 @@ set -euo pipefail
 ENGINE="${CLAUDE_SANDBOX_ENGINE:-podman}"
 IMAGE="${CLAUDE_SANDBOX_IMAGE:-claude-sandbox:latest}"
 CONFIG_VOLUME="${CLAUDE_SANDBOX_CONFIG_VOLUME:-claude-config}"
+KIMI_CONFIG_VOLUME="${CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME:-kimi-config}"
 PROJECT_DIR="${CLAUDE_SANDBOX_WORKDIR:-$PWD}"
 
 # Resolve this script's real location, following symlinks, so the image and
@@ -51,6 +54,13 @@ fi
 if [ "${1:-}" = "shell" ]; then
     shift
     CMD=(bash "$@")
+elif [ "${1:-}" = "kimi" ]; then
+    shift
+    if [ "$#" -eq 0 ]; then
+        CMD=(kimi --yolo)
+    else
+        CMD=(kimi "$@")
+    fi
 elif [ "$#" -eq 0 ]; then
     CMD=(claude --dangerously-skip-permissions)
 else
@@ -113,6 +123,7 @@ ENV_ARGS=()
 for _v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN GH_TOKEN GITHUB_TOKEN \
           GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL \
           CLAUDE_CODE_DISABLE_TERMINAL_TITLE CLAUDE_CODE_DISABLE_MOUSE_CLICKS \
+          KIMI_API_KEY KIMI_BASE_URL KIMI_MODEL KIMI_MAX_TOKENS \
           CLAUDE_SANDBOX_FIREWALL; do
     [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v=${!_v}")
 done
@@ -135,6 +146,7 @@ exec "$ENGINE" run --rm -it \
     --hostname claude-sandbox \
     -v "$PROJECT_DIR:/work" \
     -v "$CONFIG_VOLUME:/root/.claude" \
+    -v "$KIMI_CONFIG_VOLUME:/root/.kimi" \
     "${ALLOW_MOUNT[@]}" \
     "${PROJECT_MOUNT[@]}" \
     "${ENV_ARGS[@]}" \

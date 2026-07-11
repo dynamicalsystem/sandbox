@@ -24,6 +24,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # accident; test selection in Terminal.app before moving it.
 RUN npm install -g @anthropic-ai/claude-code@2.1.206
 
+# Kimi Code CLI -- installed alongside Claude so the same sandbox image can run
+# either agent. Pinned to avoid silent upgrades on rebuild.
+RUN npm install -g @moonshot-ai/kimi-code@0.23.5
+
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
