@@ -17,7 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g @anthropic-ai/claude-code
+# Pinned, not floating. Unpinned, every `cs rebuild` silently jumps to npm's
+# latest -- 2.1.207 turned on mouse tracking that Terminal.app can't override,
+# which breaks native text selection (Terminal.app has no modifier bypass). Pin
+# to the version the host runs and drags fine on. Bump deliberately, not by
+# accident; test selection in Terminal.app before moving it.
+RUN npm install -g @anthropic-ai/claude-code@2.1.206
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
