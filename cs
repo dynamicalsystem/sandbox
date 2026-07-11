@@ -89,6 +89,14 @@ fi
 # honoured -- ':=' would clobber it back to 1 and break that opt-out.
 : "${CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1}"
 
+# Recent Claude Code (>= 2.1.187) captures mouse clicks/drag in fullscreen, which
+# steals click-drag from the terminal and breaks native text selection/copy.
+# Default to the scroll-only mouse mode (CLAUDE_CODE_DISABLE_MOUSE_CLICKS, added
+# 2.1.195) so select/copy works; scroll still works. Set it empty in your env
+# file to opt back into Claude's click-to-interact behaviour. '=' (not ':=') so
+# an explicit empty value is honoured.
+: "${CLAUDE_CODE_DISABLE_MOUSE_CLICKS=1}"
+
 # Git identity: fall back to the host's git config so commits made inside the
 # sandbox carry your name/email with no extra setup. (git reads these env vars
 # directly, so no .gitconfig needs to be mounted.)
@@ -106,7 +114,8 @@ fi
 ENV_ARGS=()
 for _v in ANTHROPIC_API_KEY CLAUDE_CODE_OAUTH_TOKEN GH_TOKEN GITHUB_TOKEN \
           GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL \
-          CLAUDE_CODE_DISABLE_TERMINAL_TITLE CLAUDE_SANDBOX_FIREWALL; do
+          CLAUDE_CODE_DISABLE_TERMINAL_TITLE CLAUDE_CODE_DISABLE_MOUSE_CLICKS \
+          CLAUDE_SANDBOX_FIREWALL; do
     [ -n "${!_v:-}" ] && ENV_ARGS+=(-e "$_v=${!_v}")
 done
 
