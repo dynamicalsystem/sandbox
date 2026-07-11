@@ -12,7 +12,7 @@
 # The current directory is mounted at /work; nothing else of your host is
 # visible. Egress is limited to the global allowlist plus, if present, the
 # launch dir's .claude-sandbox/allowed-domains.txt. Auth (~/.claude and
-# ~/.kimi) persists in named volumes across runs.
+# ~/.kimi-code) persists in named volumes across runs.
 #
 # Cross-platform: runs under zsh/bash on macOS and bash in Windows/WSL2.
 set -euo pipefail
@@ -146,7 +146,7 @@ exec "$ENGINE" run --rm -it \
     --hostname claude-sandbox \
     -v "$PROJECT_DIR:/work" \
     -v "$CONFIG_VOLUME:/root/.claude" \
-    -v "$KIMI_CONFIG_VOLUME:/root/.kimi" \
+    -v "$KIMI_CONFIG_VOLUME:/root/.kimi-code" \
     "${ALLOW_MOUNT[@]}" \
     "${PROJECT_MOUNT[@]}" \
     "${ENV_ARGS[@]}" \
