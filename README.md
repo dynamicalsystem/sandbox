@@ -6,8 +6,9 @@ machine. The only host directory it sees is the one you launch it from; the
 only network it can reach is an egress allowlist.
 
 Generic and project-agnostic: `cs` mounts whatever directory you run it from.
-Same files work on **macOS** (podman `applehv`) and **Windows/WSL2** -- one
-Containerfile, one workflow, one mental model.
+It also understands the OODA per-product worktree layout. Same files work on
+**macOS** (podman `applehv`) and **Windows/WSL2** -- one Containerfile, one
+workflow, one mental model.
 
 ## Install
 
@@ -43,36 +44,44 @@ gone on exit -- only the project files it changed and your auth persist.
 ### Jump straight into a project
 
 `install.sh` also drops a `cs()` shell function into your `~/.zshrc` (sourced
-from `cs.zsh`). Give it a project name and it `cd`s into that project under
-`~/Documents/dynamicalsystem/` before launching the sandbox there:
+from `cs.zsh`). Give it a project name and it `cd`s into that project's
+per-product directory before launching the sandbox:
 
 ```bash
-cs myproj            # cd ~/Documents/dynamicalsystem/myproj, then sandbox it
-cs myproj --resume   # cd, then pass remaining args through to claude
-cs                   # no name -> sandbox in $PWD, exactly as before
-cs shell / cs rebuild   # subcommands still work, run in $PWD
+cs myproj             # cd ~/work/myproj/main, then sandbox it
+cs myproj foo         # cd ~/work/myproj/foo, then sandbox it
+cs myproj --worktree foo  # explicit form of the above
+cs myproj --resume    # cd ~/work/myproj/main, pass --resume to claude
+cs                    # no name -> sandbox in $PWD, exactly as before
+cs shell / cs rebuild # subcommands still work, run in $PWD
 ```
 
-Override the projects root with `CS_PROJECT_ROOT`. The function calls the
-launcher via `command cs`, so the bare-`cs` behaviour above is unchanged.
+Override the projects root with `CS_PROJECT_ROOT` (default `~/work`). The
+function calls the launcher via `command cs`, so the bare-`cs` behaviour above
+is unchanged.
 
-### Warehouse mode (OODA)
+### OODA worktrees
 
-If a project has a Git warehouse -- a bare clone with `main/` and `ooda/`
-worktrees -- `cs` detects it and mounts the whole warehouse into the container
-at the same absolute path it has on the host. The shell starts in
-`<warehouse>/main`, so `git worktree list` inside the container sees both
-branches and the control plane persists across container restarts.
+If a product is laid out as a directory of worktrees, `cs` detects it and mounts
+the right pieces into the container:
 
-Canonical warehouse root:
-
+```text
+~/work/<product>/
+├── main/          # normal clone, main branch
+├── ooda/          # control-plane worktree on the orphan ooda branch
+├── foo/           # loop foo product worktree
+└── bar-fix/       # loop bar-fix product worktree
 ```
-$XDG_DATA_HOME/dynamicalsystem/warehouse/<product>/
-```
 
-with the usual fallback to `~/.local/share/dynamicalsystem/warehouse/<product>/`
-when `$XDG_DATA_HOME` is unset. Existing setups using a sibling
-`<project>.warehouse/` directory also continue to work.
+The container mounts:
+
+- the sandbox worktree (the one you launched from, or the one named by
+  `--worktree`) at `/work`;
+- `<product>/main/` at its host absolute path, so Git metadata resolves;
+- `<product>/ooda/` at its host absolute path, so `/orient` can read loop docs.
+
+This lets `git worktree list` inside the container see `main`, `ooda`, and the
+sandbox worktree, while keeping each container session scoped to a single loop.
 
 ## Why this shape
 
@@ -215,9 +224,8 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_CONFIG_VOLUME`      | `claude-config` | Claude auth-persistence volume |
 | `CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME` | `kimi-config` | Kimi auth-persistence volume (mounted at `/root/.kimi-code`) |
 | `KIMI_HOST_DIR`                     | `~/.kimi-code` | host path for Kimi skills/AGENTS.md bind mounts |
-| `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` (in non-warehouse mode) |
-| `CLAUDE_SANDBOX_WAREHOUSE_ROOT`     | `${XDG_DATA_HOME:-$HOME/.local/share}/dynamicalsystem/warehouse` | directory to search for `<product>/.bare`, `main/`, `ooda/` |
-| `XDG_DATA_HOME`                     | unset (defaults to `~/.local/share`) | fallback base for `CLAUDE_SANDBOX_WAREHOUSE_ROOT` |
+| `CS_PROJECT_ROOT`                   | `~/work` | directory that holds per-product directories |
+| `CLAUDE_SANDBOX_WORKDIR`            | `$PWD` | host dir to mount at `/work` (fallback for non-OODA projects) |
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |
 

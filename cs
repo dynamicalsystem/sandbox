@@ -2,16 +2,17 @@
 # Run Claude Code or Kimi Code inside a rootless-Podman sandbox.
 #
 # Usage:
-#   cs                  # claude --dangerously-skip-permissions, in $PWD
-#   cs <args...>        # claude <args...>
-#   cs kimi             # kimi --yolo, in $PWD
-#   cs kimi <args...>   # kimi <args...>
-#   cs shell            # interactive bash in the sandbox
-#   cs rebuild          # rebuild the image (after editing scripts / updating)
+#   cs                            # claude --dangerously-skip-permissions, in $PWD
+#   cs <args...>                  # claude <args...>
+#   cs kimi                       # kimi --yolo, in $PWD
+#   cs kimi <args...>             # kimi <args...>
+#   cs shell                      # interactive bash in the sandbox
+#   cs rebuild                    # rebuild the image (after editing scripts / updating)
+#   cs --worktree foo             # run in the foo worktree of the current product
 #
-# The current directory is mounted at /work; nothing else of your host is
-# visible. Egress is limited to the global allowlist plus, if present, the
-# launch dir's .claude-sandbox/allowed-domains.txt. Auth (~/.claude and
+# The current directory (or the directory named by --worktree) is mounted at
+# /work. Egress is limited to the global allowlist plus, if present, the
+# project's .claude-sandbox/allowed-domains.txt. Auth (~/.claude and
 # ~/.kimi-code) persists in named volumes across runs.
 #
 # Cross-platform: runs under zsh/bash on macOS and bash in Windows/WSL2.
@@ -22,6 +23,26 @@ IMAGE="${CLAUDE_SANDBOX_IMAGE:-claude-sandbox:latest}"
 CONFIG_VOLUME="${CLAUDE_SANDBOX_CONFIG_VOLUME:-claude-config}"
 KIMI_CONFIG_VOLUME="${CLAUDE_SANDBOX_KIMI_CONFIG_VOLUME:-kimi-config}"
 PROJECT_DIR="${CLAUDE_SANDBOX_WORKDIR:-$PWD}"
+
+# Parse an optional --worktree <name> switch before the agent sees the arguments.
+WORKTREE_NAME=""
+RAW_ARGS=("$@")
+set --
+_i=0
+while [ "$_i" -lt "${#RAW_ARGS[@]}" ]; do
+    _arg="${RAW_ARGS[$_i]}"
+    if [ "$_arg" = "--worktree" ]; then
+        _i=$((_i + 1))
+        WORKTREE_NAME="${RAW_ARGS[$_i]:-}"
+        if [ -z "$WORKTREE_NAME" ]; then
+            echo "error: --worktree requires a name" >&2
+            exit 1
+        fi
+    else
+        set -- "$@" "$_arg"
+    fi
+    _i=$((_i + 1))
+done
 
 # Resolve this script's real location, following symlinks, so the image and
 # global allowlist are found even when invoked as ~/.local/bin/cs.
@@ -78,51 +99,52 @@ if [ -f "$SANDBOX_DIR/allowed-domains.txt" ]; then
     ALLOW_MOUNT=(-v "$SANDBOX_DIR/allowed-domains.txt:/etc/claude-sandbox/allowed-domains.txt:ro")
 fi
 
-# Warehouse mode: if the project has a bare clone + main/ooda worktrees, mount the
-# whole warehouse at the same absolute path inside the container (git worktree
-# metadata stores absolute paths) and start the shell in <warehouse>/main.
-# Otherwise fall back to mounting the launch dir at /work.
-WAREHOUSE_ROOT="${CLAUDE_SANDBOX_WAREHOUSE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/dynamicalsystem/warehouse}"
-REPO_ROOT="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
-WAREHOUSE_PATH=""
-
-# Case 1: the launch directory is already inside a warehouse worktree
-# (<warehouse>/<product>/main or .../ooda). The warehouse root is the parent dir.
-if [ -n "$REPO_ROOT" ]; then
-    _warehouse_candidate="$(dirname "$REPO_ROOT")"
-    _worktree_name="${REPO_ROOT##*/}"
-    if [ "$_worktree_name" = "main" ] || [ "$_worktree_name" = "ooda" ]; then
-        if [ -d "$_warehouse_candidate/.bare" ] \
-           && [ -d "$_warehouse_candidate/main" ] \
-           && [ -d "$_warehouse_candidate/ooda" ]; then
-            WAREHOUSE_PATH="$_warehouse_candidate"
-        fi
+# Product-worktree mode: if the launch directory (or an explicitly named
+# worktree) is inside a product directory that also has main/ and ooda/
+# worktrees, mount the sandbox worktree at /work and also mount main/ and ooda/
+# at their host absolute paths so Git metadata resolves and /orient can read the
+# control plane. Otherwise fall back to mounting the launch dir at /work.
+SANDBOX_WORKTREE="$PROJECT_DIR"
+if [ -n "$WORKTREE_NAME" ]; then
+    _repo_root="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -z "$_repo_root" ]; then
+        echo "error: --worktree requires the launch directory to be inside a Git repo" >&2
+        exit 1
+    fi
+    _product_root="$(dirname "$_repo_root")"
+    SANDBOX_WORKTREE="$_product_root/$WORKTREE_NAME"
+    if [ ! -d "$SANDBOX_WORKTREE" ]; then
+        echo "error: worktree not found: $SANDBOX_WORKTREE" >&2
+        exit 1
     fi
 fi
 
-# Case 2: the launch directory is a normal clone; look for an external warehouse.
-if [ -z "$WAREHOUSE_PATH" ]; then
-    [ -n "$REPO_ROOT" ] || REPO_ROOT="$PROJECT_DIR"
-    PRODUCT_NAME="${REPO_ROOT##*/}"
-    if [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/.bare" ] \
-       && [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/main" ] \
-       && [ -d "$WAREHOUSE_ROOT/$PRODUCT_NAME/ooda" ]; then
-        WAREHOUSE_PATH="$WAREHOUSE_ROOT/$PRODUCT_NAME"
-    elif [ -d "$REPO_ROOT.warehouse/.bare" ] \
-         && [ -d "$REPO_ROOT.warehouse/main" ] \
-         && [ -d "$REPO_ROOT.warehouse/ooda" ]; then
-        WAREHOUSE_PATH="$REPO_ROOT.warehouse"
+OODA_MAIN_DIR=""
+OODA_OODA_DIR=""
+if [ -d "$SANDBOX_WORKTREE" ]; then
+    _repo_root="$(git -C "$SANDBOX_WORKTREE" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -n "$_repo_root" ]; then
+        _git_common="$(git -C "$SANDBOX_WORKTREE" rev-parse --git-common-dir 2>/dev/null || true)"
+        _main_dir="$(dirname "$_git_common")"
+        _product_root="$(dirname "$_main_dir")"
+        if [ -d "$_product_root/main" ] && [ -d "$_product_root/ooda" ]; then
+            OODA_MAIN_DIR="$_product_root/main"
+            OODA_OODA_DIR="$_product_root/ooda"
+        fi
     fi
 fi
 
 WORK_MOUNT=()
 WORK_DIR="/work"
 PROJECT_MOUNT=()
-if [ -n "$WAREHOUSE_PATH" ]; then
-    WORK_MOUNT=(-v "$WAREHOUSE_PATH:$WAREHOUSE_PATH")
-    WORK_DIR="$WAREHOUSE_PATH/main"
-    if [ -f "$WAREHOUSE_PATH/main/.claude-sandbox/allowed-domains.txt" ]; then
-        PROJECT_MOUNT=(-v "$WAREHOUSE_PATH/main/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
+if [ -n "$OODA_MAIN_DIR" ] && [ -n "$OODA_OODA_DIR" ]; then
+    WORK_MOUNT=(
+        -v "$SANDBOX_WORKTREE:/work"
+        -v "$OODA_MAIN_DIR:$OODA_MAIN_DIR"
+        -v "$OODA_OODA_DIR:$OODA_OODA_DIR"
+    )
+    if [ -f "$OODA_MAIN_DIR/.claude-sandbox/allowed-domains.txt" ]; then
+        PROJECT_MOUNT=(-v "$OODA_MAIN_DIR/.claude-sandbox/allowed-domains.txt:/etc/claude-sandbox/project-domains.txt:ro")
     fi
 else
     WORK_MOUNT=(-v "$PROJECT_DIR:/work")
@@ -198,9 +220,9 @@ done
 # (CLAUDE_CODE_DISABLE_TERMINAL_TITLE is set above). Best-effort: only when
 # stdout is a tty, so piping/redirecting cs stays clean.
 if [ -t 1 ]; then
-    TITLE="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+    TITLE="$(git -C "$SANDBOX_WORKTREE" rev-parse --show-toplevel 2>/dev/null || true)"
     TITLE="${TITLE##*/}"
-    [ -n "$TITLE" ] || TITLE="${PROJECT_DIR##*/}"
+    [ -n "$TITLE" ] || TITLE="${SANDBOX_WORKTREE##*/}"
     printf '\033]0;%s\007' "$TITLE"
 fi
 
