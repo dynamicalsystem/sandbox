@@ -28,9 +28,14 @@ the feature branch in the loop worktree.
 
 `orient.md`:
 
+`/orient` is the skill agents use to load context from active loops. If the
+control plane moves from `<product>.warehouse/ooda/` to `<product>/ooda/`, the
+skill must know where to look or `/orient` will fail inside the container.
+
 - Update discovery: given a directory, detect whether it is inside a product
   directory; if so, use `<product>/ooda/` as the control plane.
-- Update the cross-product registry path to match the new layout.
+- Update the cross-product registry path to match the new layout, so products
+  registered in `ooda-roots` point at their per-product directories.
 
 ## Sandbox changes (sandbox repo)
 
