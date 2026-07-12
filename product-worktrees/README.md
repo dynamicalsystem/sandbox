@@ -2,7 +2,7 @@
 loop: product-worktrees
 product: sandbox
 owner: dynamicalsystem
-status: Observe
+status: Decide
 parent: warehouse-mode
 blocked-by: []
 worktrees:
@@ -15,7 +15,7 @@ triggers: []
 
 ## Status
 
-Observe
+Decide
 
 **Owner:** dynamicalsystem
 
@@ -49,50 +49,74 @@ at the same absolute path inside the container.
 
 ## Orientation
 
-There are two plausible layouts:
+The right layout is a **per-project directory** that contains the main clone and
+all of its worktrees. This keeps everything for one product in one place without
+re-introducing a bare repo or a special `warehouse` concept.
 
-1. **Keep the bare warehouse** (`<product>.warehouse/.bare`, `main/`, `ooda/`)
-   and place loop-named product worktrees next to it (e.g.
-   `<product>-<loop>/`). The sandbox mounts the current product worktree plus the
-   warehouse paths needed for git metadata and the `ooda` worktree.
+```text
+~/work/<product>/
+├── main/          # normal clone, main branch
+├── ooda/          # ooda orphan branch -- control plane
+├── foo/           # feature/foo branch -- loop foo product worktree
+└── bar-fix/       # feature/bar-fix branch -- loop bar-fix product worktree
+```
 
-2. **Drop the warehouse entirely.** The product repo itself is the `main`
-   worktree. The `ooda` branch is checked out as a sibling worktree
-   (`<product>-ooda/`). Each loop's code changes happen in a sibling worktree
-   named for the loop (`<product>-<loop>/`). The sandbox mounts the current
-   worktree and the `ooda` worktree.
+- `main/` is just the project clone. The name makes the directory's role obvious.
+- `ooda/` holds loop docs and is pushed direct to the orphan `ooda` branch.
+- Each loop gets a product worktree named for the loop, branched from `main`.
+- Git worktree metadata stores absolute paths, so the sandbox must mount any
+  needed worktree at the same host absolute path inside the container.
+- A container session should be scoped to a **single** product worktree, plus the
+  `ooda` worktree and the `main/` repo metadata.
 
-Option 2 is simpler: no bare clone, no extra `warehouse` concept, just standard
-Git worktrees. It also removes the `dynamicalsystem` namespace problem entirely.
-The OODA skill would need to be updated to describe this layout as the default.
+This is the same model GitHub Copilot and Claude's `--worktree` use for parallel
+agent sessions, except the worktrees are loop-named and long-lived.
 
 ## Decision
 
-Pending user confirmation:
-
-- Adopt option 2 (normal clone + sibling worktrees) as the canonical OODA layout.
-- Update the OODA skill to match.
-- Update `cs` to detect that the launch directory is a Git worktree, find the
-  sibling `ooda` worktree, and mount both at their host absolute paths.
-- Deprecate or remove the warehouse-specific logic added in `warehouse-mode`.
+- Adopt the per-project directory layout as the canonical OODA shape.
+- Drop the bare-repo `warehouse` concept and the `dynamicalsystem` namespace path.
+- Update the OODA and orient skills to describe the new layout.
+- Update `cs` and `cs.zsh`:
+  - `cs <product>` starts in `~/work/<product>/main`.
+  - `cs <product> <loop>` starts in `~/work/<product>/<loop>` if it exists.
+  - The container mounts the current worktree as `/work`, plus `main/` and
+    `ooda/` at their host absolute paths for Git metadata and `/orient`.
+- Deprecate/remove the warehouse-specific logic from `warehouse-mode`.
+- Hand off implementation planning to OpenSpec.
 
 ## Action
 
-None yet. Awaiting decision on layout and scope.
+- Record the decision in this loop.
+- Create OpenSpec artifacts (`proposal.md`, `design.md`, `tasks.md`, specs) in
+  the sandbox repo under `openspec/changes/product-worktrees/`.
+- Present the proposal for approval before applying.
 
 ## Outcomes
 
 ### Outcome 1: Agent running in a product worktree can see the control plane
 
 Tests:
-- [ ] `cs shell` from `musters-foo/` starts in `musters-foo/` and can read
-      `musters-ooda/`.
-- [ ] `git worktree list` inside the container lists at least the current worktree
-      and the `ooda` worktree.
+- [ ] `cs shell` from `~/work/musters/foo/` starts in `/work` and can read
+      `~/work/musters/ooda/`.
+- [ ] `git worktree list` inside the container lists `main`, `ooda`, and the
+      current loop worktree.
 - [ ] `/orient` inside the container can read loop docs from the `ooda` worktree.
 
-### Outcome 2: Existing single-directory workflow still works
+### Outcome 2: Wrapper can jump to main or a loop worktree
+
+Tests:
+- [ ] `cs musters` starts the container in `~/work/musters/main/`.
+- [ ] `cs musters foo` starts the container in `~/work/musters/foo/` if it exists.
+
+### Outcome 3: Existing single-directory workflow still works
 
 Tests:
 - [ ] A project without an `ooda` worktree still mounts at `/work` and behaves as
       before.
+
+### Outcome 4: OODA skill documents the new layout
+
+Tests:
+- [ ] The OODA skill describes the per-project directory layout.
+- [ ] The orient skill uses the same discovery rule to find the `ooda` worktree.
