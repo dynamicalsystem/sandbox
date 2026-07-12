@@ -1,0 +1,66 @@
+# Design: Product Worktrees
+
+## Host layout
+
+The user chooses a projects root (default `~/work/`). Each product is a
+directory under that root:
+
+```text
+~/work/
+└── musters/
+    ├── main/          # normal clone; branch main
+    ├── ooda/          # git worktree add ../ooda ooda
+    ├── foo/           # git worktree add ../foo -b feature/foo
+    └── bar-fix/       # git worktree add ../bar-fix -b feature/bar-fix
+```
+
+`main/` is created by `git clone`. `ooda/` and loop worktrees are created with
+`git worktree add`. Loop docs live on the `ooda` branch; product code lives on
+the feature branch in the loop worktree.
+
+## Skill changes (augment repo)
+
+`ooda.md`:
+
+- Replace the warehouse diagram with the per-product directory layout.
+- Define `<product>/main/`, `<product>/ooda/`, and `<product>/<loop>/`.
+- Keep direct-push-to-ooda and re-authoring rules unchanged.
+
+`orient.md`:
+
+- Update discovery: given a directory, detect whether it is inside a product
+  directory; if so, use `<product>/ooda/` as the control plane.
+- Update the cross-product registry path to match the new layout.
+
+## Sandbox changes (sandbox repo)
+
+`cs` launcher:
+
+- Remove `CLAUDE_SANDBOX_WAREHOUSE_ROOT` and warehouse detection.
+- Detect whether the launch directory is a Git worktree of a repo that has an
+  `ooda` sibling worktree.
+- If yes:
+  - mount the current directory at `/work`;
+  - mount `<product>/main/` at its host absolute path;
+  - mount `<product>/ooda/` at its host absolute path;
+  - set the container working directory to `/work`.
+- If no `ooda` worktree exists, fall back to the existing `/work` mount.
+
+`cs.zsh` wrapper:
+
+- `cs <product>` -> `cd <projects-root>/<product>/main`, then run launcher.
+- `cs <product> <loop>` -> `cd <projects-root>/<product>/<loop>` if it exists,
+  else error.
+- Keep `cs shell` and `cs rebuild` behaviour unchanged.
+
+`README.md`:
+
+- Replace warehouse-mode docs with the per-product worktree layout.
+- Document the projects root override (`CS_PROJECT_ROOT`).
+
+## Container git behaviour
+
+Because `main/` and `ooda/` are mounted at their host absolute paths, Git
+worktree metadata resolves correctly. `git worktree list` inside the container
+shows `main`, `ooda`, and the current loop worktree. `/orient` can read the
+`ooda/` directory directly.
