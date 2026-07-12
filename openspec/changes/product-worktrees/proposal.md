@@ -6,15 +6,24 @@ The current sandbox `warehouse-mode` mounts the entire OODA warehouse and drops
 the agent into the `main/` worktree. That only supports one product worktree,
 which is no different from a normal `git clone`.
 
-The OODA workflow requires multiple active product worktrees:
+The OODA workflow requires multiple active product worktrees.
+
+**Use case 1: parallel work with an emergency interrupt.**
 
 - Fiona is implementing `foo`.
 - Bob implemented `bar` and it is merged.
 - A bug appears in `bar`; Bob is away, so Fiona must fix it while her `foo`
   work remains untouched.
 
-This needs loop-named product worktrees plus a control-plane worktree that the
-agent can read from inside the sandbox.
+**Use case 2: reviewing someone else's loop.**
+
+- Fiona has finished `foo` and wants Bob to PR it.
+- Bob is in the middle of `bar-prime`, so he needs to switch to `foo`, evaluate
+  the code, run it locally, and test the loop outcomes.
+- Once reviewed, Bob needs to switch back to `bar-prime` just as easily.
+
+Both cases need loop-named product worktrees plus a control-plane worktree that
+the agent can read from inside the sandbox.
 
 ## Scope
 
