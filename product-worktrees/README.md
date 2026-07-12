@@ -2,20 +2,22 @@
 loop: product-worktrees
 product: sandbox
 owner: dynamicalsystem
-status: Decide
+status: Closed
 parent: warehouse-mode
 blocked-by: []
 worktrees:
   - /Users/dynamicalsystem/Documents/dynamicalsystem/sandbox.warehouse/main
-prs: []
+prs:
+  - https://github.com/dynamicalsystem/sandbox/pull/11
+  - https://github.com/dynamicalsystem/sandbox/pull/12
 triggers: []
 ---
 
-# Product Worktrees
+# [ARCHIVED] Product Worktrees
 
 ## Status
 
-Decide
+Closed
 
 **Owner:** dynamicalsystem
 
@@ -88,36 +90,39 @@ agent sessions, except the worktrees are loop-named and long-lived.
 
 ## Action
 
-- Record the decision in this loop.
-- Create OpenSpec artifacts (`proposal.md`, `design.md`, `tasks.md`, specs) in
-  the sandbox repo under `openspec/changes/product-worktrees/`.
-- Present the proposal for approval before applying.
+- Updated the OODA and orient skills in the augment repo to describe the
+  per-product worktree layout.
+- Created OpenSpec artifacts in `openspec/changes/product-worktrees/`
+  (https://github.com/dynamicalsystem/sandbox/pull/11).
+- Implemented product-worktree support in `cs`, `cs.zsh`, and `README.md`
+  (https://github.com/dynamicalsystem/sandbox/pull/12).
 
 ## Outcomes
 
 ### Outcome 1: Agent running in a product worktree can see the control plane
 
 Tests:
-- [ ] `cs shell` from `~/work/musters/foo/` starts in `/work` and can read
+- [x] `cs shell` from `~/work/musters/foo/` starts in `/work` and can read
       `~/work/musters/ooda/`.
-- [ ] `git worktree list` inside the container lists `main`, `ooda`, and the
+- [x] `git worktree list` inside the container lists `main`, `ooda`, and the
       sandbox worktree.
-- [ ] `/orient` inside the container can read loop docs from the `ooda` worktree.
+- [x] `/orient` inside the container can read loop docs from the `ooda` worktree.
 
 ### Outcome 2: Wrapper can jump to main or a loop worktree
 
 Tests:
-- [ ] `cs musters` starts the container in `~/work/musters/main/`.
-- [ ] `cs musters foo` starts the container in `~/work/musters/foo/` if it exists.
+- [x] `cs musters` starts the container in `~/work/musters/main/`.
+- [x] `cs musters foo` starts the container in `~/work/musters/foo/` if it exists.
+- [x] `cs musters --worktree foo` is equivalent to `cs musters foo`.
 
 ### Outcome 3: Existing single-directory workflow still works
 
 Tests:
-- [ ] A project without an `ooda` worktree still mounts at `/work` and behaves as
+- [x] A project without an `ooda` worktree still mounts at `/work` and behaves as
       before.
 
 ### Outcome 4: OODA skill documents the new layout
 
 Tests:
-- [ ] The OODA skill describes the per-project directory layout.
-- [ ] The orient skill uses the same discovery rule to find the `ooda` worktree.
+- [x] The OODA skill describes the per-product directory layout.
+- [x] The orient skill uses the same discovery rule to find the `ooda` worktree.
