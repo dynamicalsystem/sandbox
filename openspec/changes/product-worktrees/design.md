@@ -40,7 +40,7 @@ the feature branch in the loop worktree.
 - Detect whether the launch directory is a Git worktree of a repo that has an
   `ooda` sibling worktree.
 - If yes:
-  - mount the current directory at `/work`;
+  - mount the **sandbox worktree** (the directory `cs` was launched from) at `/work`;
   - mount `<product>/main/` at its host absolute path;
   - mount `<product>/ooda/` at its host absolute path;
   - set the container working directory to `/work`.

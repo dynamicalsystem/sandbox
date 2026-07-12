@@ -24,7 +24,7 @@
 - [ ] 3.1 Detect whether the launch directory is a Git worktree whose repo has
       an `ooda` sibling worktree.
 - [ ] 3.2 Find `<product>/main/` (repo common dir) and `<product>/ooda/`.
-- [ ] 3.3 Mount current worktree at `/work`.
+- [ ] 3.3 Mount the sandbox worktree at `/work`.
 - [ ] 3.4 Mount `<product>/main/` and `<product>/ooda/` at their host absolute
       paths.
 - [ ] 3.5 Set container working directory to `/work`.

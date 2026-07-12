@@ -34,8 +34,11 @@ checks out a feature branch branched from `main`.
 
 When `cs` is launched from a worktree inside `<product>/`, the container mounts:
 
-- the current worktree at `/work`;
+- the **sandbox worktree** (the worktree `cs` was launched from) at `/work`;
 - `<product>/main/` at its host absolute path (shared `.git` metadata);
 - `<product>/ooda/` at its host absolute path (control plane for `/orient`).
 
 Other product worktrees are not mounted: one container session = one loop.
+
+Outside the sandbox, all worktrees are equally accessible on the host; the
+sandbox worktree is only meaningful inside the container session.
