@@ -37,20 +37,26 @@ the feature branch in the loop worktree.
 `cs` launcher:
 
 - Remove `CLAUDE_SANDBOX_WAREHOUSE_ROOT` and warehouse detection.
-- Detect whether the launch directory is a Git worktree of a repo that has an
+- Accept an optional `--worktree <name>` argument. When given, the sandbox
+  worktree is `<product>/<name>/` instead of the directory `cs` was launched
+  from.
+- Detect whether the sandbox worktree is a Git worktree of a repo that has an
   `ooda` sibling worktree.
 - If yes:
-  - mount the **sandbox worktree** (the directory `cs` was launched from) at `/work`;
+  - mount the sandbox worktree at `/work`;
   - mount `<product>/main/` at its host absolute path;
   - mount `<product>/ooda/` at its host absolute path;
   - set the container working directory to `/work`.
 - If no `ooda` worktree exists, fall back to the existing `/work` mount.
+- Strip `--worktree <name>` from the arguments passed to Claude or Kimi.
 
 `cs.zsh` wrapper:
 
 - `cs <product>` -> `cd <projects-root>/<product>/main`, then run launcher.
 - `cs <product> <loop>` -> `cd <projects-root>/<product>/<loop>` if it exists,
   else error.
+- `cs <product> --worktree <loop>` -> same as above, for users who prefer the
+  explicit switch.
 - Keep `cs shell` and `cs rebuild` behaviour unchanged.
 
 `README.md`:
@@ -62,5 +68,5 @@ the feature branch in the loop worktree.
 
 Because `main/` and `ooda/` are mounted at their host absolute paths, Git
 worktree metadata resolves correctly. `git worktree list` inside the container
-shows `main`, `ooda`, and the current loop worktree. `/orient` can read the
-`ooda/` directory directly.
+shows `main`, `ooda`, and the sandbox worktree. `/orient` can read the `ooda/`
+directory directly.

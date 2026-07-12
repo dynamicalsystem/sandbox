@@ -22,7 +22,8 @@ In scope:
 
 - Define the canonical per-product directory layout.
 - Update the OODA and orient skills to describe the layout.
-- Update `cs` and `cs.zsh` to mount and enter the correct worktree.
+- Update `cs` and `cs.zsh` to mount and enter the correct worktree, including an
+  explicit `--worktree <name>` switch.
 - Deprecate/remove the warehouse-specific logic from `warehouse-mode`.
 
 Out of scope:
@@ -42,9 +43,11 @@ Use a per-product directory that contains the main clone and all worktrees:
 └── bar-fix/       # loop bar-fix product worktree
 ```
 
-The sandbox scopes each container session to a single worktree:
+The sandbox scopes each container session to a single worktree. The worktree can
+be selected by launching `cs` from inside it, or explicitly with `--worktree
+<name>`:
 
-- `/work` is the worktree `cs` was launched from.
+- `/work` is the sandbox worktree.
 - `<product>/main/` is mounted at its host absolute path for shared `.git`
   metadata.
 - `<product>/ooda/` is mounted at its host absolute path so `/orient` can read

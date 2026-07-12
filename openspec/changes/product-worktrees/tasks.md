@@ -21,19 +21,22 @@
 
 ## 3. Implement product-worktree mounting
 
-- [ ] 3.1 Detect whether the launch directory is a Git worktree whose repo has
+- [ ] 3.1 Parse an optional `--worktree <name>` argument in `cs`.
+- [ ] 3.2 Detect whether the sandbox worktree is a Git worktree whose repo has
       an `ooda` sibling worktree.
-- [ ] 3.2 Find `<product>/main/` (repo common dir) and `<product>/ooda/`.
-- [ ] 3.3 Mount the sandbox worktree at `/work`.
-- [ ] 3.4 Mount `<product>/main/` and `<product>/ooda/` at their host absolute
+- [ ] 3.3 Find `<product>/main/` (repo common dir) and `<product>/ooda/`.
+- [ ] 3.4 Mount the sandbox worktree at `/work`.
+- [ ] 3.5 Mount `<product>/main/` and `<product>/ooda/` at their host absolute
       paths.
-- [ ] 3.5 Set container working directory to `/work`.
+- [ ] 3.6 Set container working directory to `/work`.
+- [ ] 3.7 Strip `--worktree <name>` before forwarding arguments to Claude/Kimi.
 
 ## 4. Update `cs.zsh`
 
 - [ ] 4.1 `cs <product>` changes into `<projects-root>/<product>/main`.
 - [ ] 4.2 `cs <product> <loop>` changes into `<projects-root>/<product>/<loop>`.
-- [ ] 4.3 Keep agent subcommand handling (`kimi`) unchanged.
+- [ ] 4.3 `cs <product> --worktree <loop>` changes into `<projects-root>/<product>/<loop>`.
+- [ ] 4.4 Keep agent subcommand handling (`kimi`) unchanged.
 
 ## 5. Update README
 
@@ -46,9 +49,10 @@
 - [ ] 6.1 Create a test product directory with `main/`, `ooda/`, and `foo/`.
 - [ ] 6.2 `cs <product> shell` from `main/` mounts correctly and can read `ooda/`.
 - [ ] 6.3 `cs <product> foo shell` from host starts in `foo/` with `ooda/` mounted.
-- [ ] 6.4 `git worktree list` inside the container lists `main`, `ooda`, and `foo`.
-- [ ] 6.5 `/orient` can read a loop README from `ooda/`.
-- [ ] 6.6 A project without `ooda/` still mounts at `/work` as before.
+- [ ] 6.4 `cs <product> --worktree foo shell` from any directory starts in `foo/`.
+- [ ] 6.5 `git worktree list` inside the container lists `main`, `ooda`, and `foo`.
+- [ ] 6.6 `/orient` can read a loop README from `ooda/`.
+- [ ] 6.7 A project without `ooda/` still mounts at `/work` as before.
 
 ## 7. Promote and close
 
