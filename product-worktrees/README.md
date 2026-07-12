@@ -80,8 +80,9 @@ agent sessions, except the worktrees are loop-named and long-lived.
 - Update `cs` and `cs.zsh`:
   - `cs <product>` starts in `~/work/<product>/main`.
   - `cs <product> <loop>` starts in `~/work/<product>/<loop>` if it exists.
-  - The container mounts the current worktree as `/work`, plus `main/` and
-    `ooda/` at their host absolute paths for Git metadata and `/orient`.
+  - The container mounts the sandbox worktree (the worktree `cs` was launched
+    from) as `/work`, plus `main/` and `ooda/` at their host absolute paths for
+    Git metadata and `/orient`.
 - Deprecate/remove the warehouse-specific logic from `warehouse-mode`.
 - Hand off implementation planning to OpenSpec.
 
@@ -100,7 +101,7 @@ Tests:
 - [ ] `cs shell` from `~/work/musters/foo/` starts in `/work` and can read
       `~/work/musters/ooda/`.
 - [ ] `git worktree list` inside the container lists `main`, `ooda`, and the
-      current loop worktree.
+      sandbox worktree.
 - [ ] `/orient` inside the container can read loop docs from the `ooda` worktree.
 
 ### Outcome 2: Wrapper can jump to main or a loop worktree
