@@ -50,7 +50,9 @@ per-product directory before launching the sandbox:
 ```bash
 cs myproj             # cd ~/work/myproj/main, then sandbox it
 cs myproj foo         # cd ~/work/myproj/foo, then sandbox it
+                      # (if foo doesn't exist, you'll be asked to create it)
 cs myproj --worktree foo  # explicit form of the above
+cs kimi myproj foo    # cd ~/work/myproj/foo, then launch Kimi
 cs myproj --resume    # cd ~/work/myproj/main, pass --resume to claude
 cs                    # no name -> sandbox in $PWD, exactly as before
 cs shell / cs rebuild # subcommands still work, run in $PWD
@@ -82,6 +84,12 @@ The container mounts:
 
 This lets `git worktree list` inside the container see `main`, `ooda`, and the
 sandbox worktree, while keeping each container session scoped to a single loop.
+
+If you name a loop worktree that does not exist yet, `cs.zsh` asks whether to
+create it. Confirming adds the Git worktree from `main/` and creates a skeleton
+`ooda/<loop>/README.md`, then launches the agent in the new worktree. In
+non-interactive contexts (stdin not a tty) the wrapper keeps the old error
+behavior so scripts do not hang.
 
 ## Why this shape
 
