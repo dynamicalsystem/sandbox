@@ -53,10 +53,11 @@ agent is the one discovering that a new loop is needed.
 
 ## Orientation
 
-Add an opt-in `--create` flag to `cs.zsh` (and document it in `cs`) that, when
-the requested loop worktree does not exist, creates it before launching the
-container. The flag should be passed after the loop name so the existing
-positional syntax is unchanged.
+When the requested loop worktree does not exist, `cs.zsh` should ask the user
+whether to create it, defaulting to yes. This keeps the common path fast (one
+extra `[Enter]` to confirm) while still guarding against typos. In
+non-interactive contexts where stdin is not a tty, the wrapper should fall back
+to its current error behavior so scripts do not hang.
 
 Creation should:
 
@@ -64,54 +65,61 @@ Creation should:
 2. Create `../ooda/<loop>/README.md` from a standard loop template.
 3. Continue launching the agent from the newly created worktree.
 
-Without `--create`, the wrapper keeps its current safe behavior of erroring on
-a missing loop.
-
 ## Decision
 
-- Extend `cs.zsh` to recognize a trailing `--create` flag after the loop name.
-- When `--create` is present and `~/work/<product>/<loop>/` does not exist:
+- When `cs.zsh` resolves a loop worktree that does not exist, and stdin is a tty,
+  print `Loop "<loop>" does not exist. Create it? [Y/n]` and read a response.
+  - Empty input or input starting with `y` or `Y` creates the loop.
+  - Any other input aborts with an error.
+- In non-interactive contexts (stdin is not a tty), keep the current error
+  behavior instead of prompting.
+- When creation is confirmed:
   - Run `git -C ~/work/<product>/main worktree add ../<loop>`.
   - Create `~/work/<product>/ooda/<loop>/README.md` with the standard loop
     frontmatter template.
-- If the loop already exists, ignore `--create` and launch normally.
-- If `--create` is omitted and the loop is missing, keep the existing error.
-- Update `README.md` usage examples to include the new flag.
-- Do not implement interactive prompts or environment-variable overrides yet;
-  keep the surface small until usage proves they are needed.
+- If the loop already exists, launch normally without prompting.
+- Update `README.md` usage examples to show the prompt.
+- Do not add a `--no-create` flag yet; abort non-interactive invocations with the
+  existing error and revisit if scripting use cases appear.
 
 ## Action
 
-- [ ] Document the new loop in `auto-create-loop-worktree/README.md`.
-- [ ] Implement `--create` parsing and worktree creation in `cs.zsh`.
+- [x] Document the new loop in `auto-create-loop-worktree/README.md`.
+- [ ] Implement interactive loop-creation prompting in `cs.zsh`.
 - [ ] Add a loop README template that `cs.zsh` can copy into `ooda/<loop>/`.
-- [ ] Update the sandbox `README.md` with the new usage.
-- [ ] Test `cs myproj new-loop --create`.
-- [ ] Test `cs kimi myproj new-loop --create`.
-- [ ] Verify that a missing loop without `--create` still errors.
+- [ ] Update the sandbox `README.md` with the new behavior.
+- [ ] Test `cs myproj new-loop` creates the loop on confirmation.
+- [ ] Test `cs myproj new-loop` aborts when the user declines.
+- [ ] Test `cs kimi myproj new-loop` creates the loop on confirmation.
+- [ ] Verify that a missing loop in a non-interactive context still errors.
 - [ ] Close the loop once the PR is merged.
 
 ## Outcomes
 
-### Outcome 1: `cs <project> <loop> --create` creates and enters a new loop
+### Outcome 1: Missing loop prompts to create, defaulting to yes
 
 Tests:
-- [ ] `cs myproj new-loop --create` creates `~/work/myproj/new-loop/` and
+- [ ] `cs myproj new-loop` prompts `Loop "new-loop" does not exist. Create it? [Y/n]`.
+- [ ] Pressing `Enter` creates `~/work/myproj/new-loop/` and
       `~/work/myproj/ooda/new-loop/README.md`, then launches Claude inside the
       new worktree.
-- [ ] `cs myproj new-loop` (without `--create`) still errors if the worktree is
-      missing.
-- [ ] `cs myproj new-loop --create` launches normally if the worktree already
-      exists.
+- [ ] Answering `n` aborts without creating anything.
+- [ ] An existing loop launches normally without prompting.
 
-### Outcome 2: Agent prefix works with the new flag
+### Outcome 2: Agent prefix works with the prompt
 
 Tests:
-- [ ] `cs kimi myproj new-loop --create` creates the worktree and launches Kimi.
-- [ ] `cs claude myproj new-loop --create` is equivalent to the no-agent-prefix
-      form.
+- [ ] `cs kimi myproj new-loop` prompts and creates the worktree when confirmed.
+- [ ] `cs claude myproj new-loop` is equivalent to the no-agent-prefix form.
 
-### Outcome 3: Control plane is bootstrapped for the new loop
+### Outcome 3: Non-interactive contexts stay safe
+
+Tests:
+- [ ] Running `cs myproj new-loop` with stdin not a tty errors instead of
+      hanging.
+- [ ] The error message still names the missing worktree path.
+
+### Outcome 4: Control plane is bootstrapped for the new loop
 
 Tests:
 - [ ] `~/work/myproj/ooda/new-loop/README.md` is created with valid frontmatter.
