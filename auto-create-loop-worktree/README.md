@@ -88,7 +88,7 @@ Creation should:
 - [x] Document the new loop in `auto-create-loop-worktree/README.md`.
 - [x] Implement interactive loop-creation prompting in `cs.zsh`.
 - [x] Add a loop README template that `cs.zsh` can copy into `ooda/<loop>/`.
-- [ ] Update the sandbox `README.md` with the new behavior.
+- [x] Update the sandbox `README.md` with the new behavior.
 - [ ] Test `cs myproj new-loop` creates the loop on confirmation.
 - [ ] Test `cs myproj new-loop` aborts when the user declines.
 - [ ] Test `cs kimi myproj new-loop` creates the loop on confirmation.
