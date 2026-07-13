@@ -6,7 +6,7 @@ status: Closed
 parent: null
 blocked-by: []
 worktrees:
-  - /Users/dynamicalsystem/Documents/dynamicalsystem/sandbox.warehouse/main
+  - /Users/dynamicalsystem/work/sandbox/main
 prs: []
 triggers: []
 ---
