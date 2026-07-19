@@ -2,20 +2,21 @@
 loop: podman-machine-autostart
 product: sandbox
 owner: dynamicalsystem
-status: Act
+status: Closed
 parent: null
 blocked-by: []
 worktrees:
   - /Users/dynamicalsystem/work/sandbox/podman-machine-autostart
-prs: []
+prs:
+  - https://github.com/dynamicalsystem/sandbox/pull/15
 triggers: []
 ---
 
-# Podman machine autostart on macOS
+# [ARCHIVED] Podman machine autostart on macOS
 
 ## Status
 
-Act
+Closed
 
 **Owner:** dynamicalsystem
 
