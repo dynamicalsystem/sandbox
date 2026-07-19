@@ -45,12 +45,13 @@ Add a macOS-only LaunchAgent installer script and invoke it from `install.sh`:
 
 ## Action
 
-- Create loop README in the `ooda` control plane.
-- Create a `podman-machine-autostart` product worktree from `main`.
-- Implement `scripts/install-podman-launchagent.sh` in the product worktree.
-- Patch `install.sh` to call the new script on macOS with an opt-out.
-- Patch `README.md` to document the LaunchAgent and opt-out.
-- Test locally and commit.
+- Created loop README in the `ooda` control plane.
+- Created a `podman-machine-autostart` product worktree from `main`.
+- Implemented `scripts/install-podman-launchagent.sh` in the product worktree.
+- Patched `install.sh` to call the new script on macOS with an opt-out.
+- Patched `README.md` to document the LaunchAgent and opt-out.
+- Tested locally and committed to the product worktree.
+- Pushed branch `podman-machine-autostart` to origin.
 - Open a PR promoting the changes to `main`.
 
 ## Outcomes
@@ -58,16 +59,16 @@ Add a macOS-only LaunchAgent installer script and invoke it from `install.sh`:
 ### Outcome 1: macOS installs auto-start the Podman machine at login
 
 Tests:
-- [ ] `install.sh` writes `~/Library/LaunchAgents/com.podman.machine.start.plist` on macOS.
-- [ ] `launchctl list` shows the agent loaded after install.
-- [ ] The Podman machine is running after install (or already running).
+- [x] `install.sh` writes `~/Library/LaunchAgents/com.podman.machine.start.plist` on macOS.
+- [x] `launchctl list` shows the agent loaded after install.
+- [x] The Podman machine is running after install (or already running).
 
 ### Outcome 2: Users can opt out of the LaunchAgent
 
 Tests:
-- [ ] `SANDBOX_SKIP_PODMAN_LAUNCHAGENT=1 ./install.sh` does not write or load the LaunchAgent.
+- [x] `SANDBOX_SKIP_PODMAN_LAUNCHAGENT=1 ./install.sh` does not write or load the LaunchAgent.
 
 ### Outcome 3: Linux and Windows installers are unaffected
 
 Tests:
-- [ ] `scripts/install-podman-launchagent.sh` exits silently on non-Darwin systems.
+- [x] `scripts/install-podman-launchagent.sh` exits silently on non-Darwin systems (verified by code path; no non-Darwin host available for runtime check).
