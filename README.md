@@ -23,6 +23,13 @@ This clones the repo to `~/.local/share/sandbox` and symlinks `cs` into
 podman machine init && podman machine start    # once, if you have no machine
 ```
 
+On macOS, `install.sh` also installs a LaunchAgent that starts the Podman
+machine automatically at login. To skip this, run:
+
+```bash
+SANDBOX_SKIP_PODMAN_LAUNCHAGENT=1 ./install.sh
+```
+
 From a local checkout instead: `./install.sh`.
 
 ## Use
@@ -237,7 +244,7 @@ share the machine kernel but cannot see each other's files.
 | `CLAUDE_SANDBOX_ENGINE`         | `podman` | container engine to drive |
 | `CLAUDE_SANDBOX_ENV`            | `~/.config/dynamicalsystem/sandbox` | host file sourced for `GH_TOKEN` / `CLAUDE_CODE_OAUTH_TOKEN` / git identity (a directory with an `env` file inside also works) |
 
-Installer knobs: `SANDBOX_HOME`, `SANDBOX_REPO`, `PREFIX` (see `install.sh`).
+Installer knobs: `SANDBOX_HOME`, `SANDBOX_REPO`, `PREFIX`, `SANDBOX_SKIP_PODMAN_LAUNCHAGENT` (see `install.sh`).
 
 ## Windows / WSL2
 
