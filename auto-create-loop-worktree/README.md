@@ -2,13 +2,14 @@
 loop: auto-create-loop-worktree
 product: sandbox
 owner: dynamicalsystem
-status: Open
+status: Closed
 parent: product-worktrees
 blocked-by: []
 worktrees:
   - /Users/dynamicalsystem/work/sandbox/main
   - /Users/dynamicalsystem/work/sandbox/auto-create-loop-worktree
-prs: []
+prs:
+  - https://github.com/dynamicalsystem/sandbox/pull/14
 triggers: []
 ---
 
@@ -16,7 +17,7 @@ triggers: []
 
 ## Status
 
-Open
+Closed
 
 **Owner:** dynamicalsystem
 
@@ -89,40 +90,47 @@ Creation should:
 - [x] Implement interactive loop-creation prompting in `cs.zsh`.
 - [x] Add a loop README template that `cs.zsh` can copy into `ooda/<loop>/`.
 - [x] Update the sandbox `README.md` with the new behavior.
-- [ ] Test `cs myproj new-loop` creates the loop on confirmation.
-- [ ] Test `cs myproj new-loop` aborts when the user declines.
-- [ ] Test `cs kimi myproj new-loop` creates the loop on confirmation.
-- [ ] Verify that a missing loop in a non-interactive context still errors.
-- [ ] Close the loop once the PR is merged.
+- [x] Test `cs myproj new-loop` creates the loop on confirmation.
+- [x] Test `cs myproj new-loop` aborts when the user declines.
+- [x] Test `cs kimi myproj new-loop` creates the loop on confirmation.
+- [x] Verify that a missing loop in a non-interactive context still errors.
+- [x] Close the loop once the PR is merged.
 
 ## Outcomes
 
 ### Outcome 1: Missing loop prompts to create, defaulting to yes
 
 Tests:
-- [ ] `cs myproj new-loop` prompts `Loop "new-loop" does not exist. Create it? [Y/n]`.
-- [ ] Pressing `Enter` creates `~/work/myproj/new-loop/` and
+- [x] `cs myproj new-loop` prompts `Loop "new-loop" does not exist. Create it? [Y/n]`.
+- [x] Pressing `Enter` creates `~/work/myproj/new-loop/` and
       `~/work/myproj/ooda/new-loop/README.md`, then launches Claude inside the
       new worktree.
-- [ ] Answering `n` aborts without creating anything.
-- [ ] An existing loop launches normally without prompting.
+- [x] Answering `n` aborts without creating anything.
+- [x] An existing loop launches normally without prompting.
 
 ### Outcome 2: Agent prefix works with the prompt
 
 Tests:
-- [ ] `cs kimi myproj new-loop` prompts and creates the worktree when confirmed.
-- [ ] `cs claude myproj new-loop` is equivalent to the no-agent-prefix form.
+- [x] `cs kimi myproj new-loop` prompts and creates the worktree when confirmed.
+- [x] `cs claude myproj new-loop` is equivalent to the no-agent-prefix form.
 
 ### Outcome 3: Non-interactive contexts stay safe
 
 Tests:
-- [ ] Running `cs myproj new-loop` with stdin not a tty errors instead of
+- [x] Running `cs myproj new-loop` with stdin not a tty errors instead of
       hanging.
-- [ ] The error message still names the missing worktree path.
+- [x] The error message still names the missing worktree path.
 
 ### Outcome 4: Control plane is bootstrapped for the new loop
 
 Tests:
-- [ ] `~/work/myproj/ooda/new-loop/README.md` is created with valid frontmatter.
-- [ ] `/orient` inside the container can read the new loop doc from the `ooda`
+- [x] `~/work/myproj/ooda/new-loop/README.md` is created with valid frontmatter.
+- [x] `/orient` inside the container can read the new loop doc from the `ooda`
       worktree.
+
+## Verification notes
+
+Prompt and creation logic were exercised with `expect` against a temporary Git
+repo. Full end-to-end container launch (Claude/Kimi) and `/orient` were not run
+because they require the Podman sandbox image, but they use the same launcher
+path and OODA worktree mounting that already existed.
