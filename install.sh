@@ -10,8 +10,9 @@
 # Env overrides:
 #   SANDBOX_HOME   where to clone the repo when curled  (default ~/.local/share/sandbox)
 #   SANDBOX_REPO   git URL to clone                      (default the dynamicalsystem repo)
-#   PREFIX         bin dir for the `cs` symlink          (default ~/.local/bin)
-#   SHELL_RC       rc file to source the cs() helper from (default ~/.zshrc)
+#   PREFIX                         bin dir for the `cs` symlink          (default ~/.local/bin)
+#   SHELL_RC                       rc file to source the cs() helper from (default ~/.zshrc)
+#   SANDBOX_SKIP_PODMAN_LAUNCHAGENT  set 1 to skip the macOS LaunchAgent install
 set -euo pipefail
 
 SANDBOX_REPO="${SANDBOX_REPO:-https://github.com/dynamicalsystem/sandbox.git}"
@@ -35,7 +36,7 @@ else
     fi
 fi
 
-chmod +x "$REPO_DIR/cs" "$REPO_DIR"/*.sh 2>/dev/null || true
+chmod +x "$REPO_DIR/cs" "$REPO_DIR"/*.sh "$REPO_DIR"/scripts/*.sh 2>/dev/null || true
 
 mkdir -p "$PREFIX"
 ln -sf "$REPO_DIR/cs" "$PREFIX/cs"
@@ -75,6 +76,15 @@ esac
 
 if ! command -v podman >/dev/null 2>&1; then
     echo "[install] WARNING: podman not found. Install it, then 'podman machine init && podman machine start'." >&2
+fi
+
+# On macOS, install a LaunchAgent that keeps the Podman machine running across logins.
+if [ "$(uname -s)" = "Darwin" ] && [ "${SANDBOX_SKIP_PODMAN_LAUNCHAGENT:-0}" != "1" ]; then
+    if [ -f "$REPO_DIR/scripts/install-podman-launchagent.sh" ]; then
+        "$REPO_DIR/scripts/install-podman-launchagent.sh"
+    else
+        echo "[install] WARNING: Podman LaunchAgent installer not found at $REPO_DIR/scripts/install-podman-launchagent.sh" >&2
+    fi
 fi
 
 echo "[install] done. Run 'cs' from any project directory."
