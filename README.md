@@ -48,15 +48,22 @@ from `cs.zsh`). Give it a project name and it `cd`s into that project's
 per-product directory before launching the sandbox:
 
 ```bash
-cs myproj             # cd ~/work/myproj/main, then sandbox it
+cs myproj             # cd ~/work/myproj/ooda, then sandbox it
+                      # (falls back to ~/work/myproj/main if there is no ooda/)
 cs myproj foo         # cd ~/work/myproj/foo, then sandbox it
                       # (if foo doesn't exist, you'll be asked to create it)
-cs myproj --worktree foo  # explicit form of the above
+cs myproj main        # cd ~/work/myproj/main, then sandbox it
+cs myproj --worktree foo  # explicit form of `cs myproj foo`
 cs kimi myproj foo    # cd ~/work/myproj/foo, then launch Kimi
-cs myproj --resume    # cd ~/work/myproj/main, pass --resume to claude
+cs myproj --resume    # cd into the default worktree, pass --resume to claude
 cs                    # no name -> sandbox in $PWD, exactly as before
 cs shell / cs rebuild # subcommands still work, run in $PWD
 ```
+
+For an OODA product the no-loop form lands in the control plane, so bare
+`cs myproj` and `cs myproj ooda` are equivalent. Loop-scoped work names its
+worktree (`cs myproj foo`); orientation sessions get the `ooda/` worktree by
+default.
 
 Override the projects root with `CS_PROJECT_ROOT` (default `~/work`). The
 function calls the launcher via `command cs`, so the bare-`cs` behaviour above

@@ -6,10 +6,10 @@
 # exactly like the underlying `cs` launcher in the current directory.
 #
 #   cs                      # sandbox in $PWD
-#   cs myproj               # cd ~/work/myproj/main, then sandbox
+#   cs myproj               # cd ~/work/myproj/ooda (or main/ if no ooda/), then sandbox
 #   cs myproj foo           # cd ~/work/myproj/foo, then sandbox
 #   cs myproj --worktree foo  # explicit form of the above
-#   cs myproj --resume      # cd ~/work/myproj/main, pass --resume to agent
+#   cs myproj --resume      # cd into the default worktree, pass --resume to agent
 #   cs kimi myproj foo      # cd ~/work/myproj/foo, then kimi
 #   cs shell                # interactive shell in the sandbox ($PWD)
 #   cs rebuild              # rebuild the image
@@ -97,11 +97,16 @@ cs() {
             # First argument is the product name.
             local product="$1"
             shift
+            # Default to the control-plane worktree for OODA products; fall
+            # back to main for everything else.
             local loop="main"
+            if [ -d "$base/$product/ooda" ]; then
+                loop="ooda"
+            fi
             local remaining=()
 
             # If the next argument is a launcher subcommand or a flag, stay on
-            # the main worktree. If it's a loop name or --worktree, use that.
+            # the default worktree. If it's a loop name or --worktree, use that.
             if [ "$#" -gt 0 ]; then
                 case "$1" in
                     shell|rebuild)
