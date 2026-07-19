@@ -67,12 +67,12 @@ check, consistent with how the layout is detected elsewhere.
 
 ## Action
 
-- [ ] Document the new loop in `default-to-control-plane/README.md`.
-- [ ] Implement the `ooda`-first default in `cs.zsh`.
-- [ ] Update the sandbox `README.md` with the new behavior.
-- [ ] Test the default lands in `ooda/` for an OODA product.
-- [ ] Test the default falls back to `main/` for a non-OODA product.
-- [ ] Test `cs <project> main` still lands in `main/`.
+- [x] Document the new loop in `default-to-control-plane/README.md`.
+- [x] Implement the `ooda`-first default in `cs.zsh`.
+- [x] Update the sandbox `README.md` with the new behavior.
+- [x] Test the default lands in `ooda/` for an OODA product.
+- [x] Test the default falls back to `main/` for a non-OODA product.
+- [x] Test `cs <project> main` still lands in `main/`.
 - [ ] Close the loop once the PR is merged.
 
 ## Outcomes
@@ -80,19 +80,27 @@ check, consistent with how the layout is detected elsewhere.
 ### Outcome 1: Bare project launches land in the control plane
 
 Tests:
-- [ ] `cs myproj` cds into `~/work/myproj/ooda` when that worktree exists.
-- [ ] `cs kimi myproj` does the same with the agent prefix.
-- [ ] `cs myproj --resume` uses the `ooda` worktree and forwards the flag.
+- [x] `cs myproj` cds into `~/work/myproj/ooda` when that worktree exists.
+- [x] `cs kimi myproj` does the same with the agent prefix.
+- [x] `cs myproj --resume` uses the `ooda` worktree and forwards the flag.
 
 ### Outcome 2: Non-OODA products are unaffected
 
 Tests:
-- [ ] `cs myproj` cds into `~/work/myproj/main` when there is no `ooda/`
+- [x] `cs myproj` cds into `~/work/myproj/main` when there is no `ooda/`
       worktree.
 
 ### Outcome 3: Main stays one token away
 
 Tests:
-- [ ] `cs myproj main` cds into `~/work/myproj/main` without prompting.
-- [ ] `cs myproj <loop>` behavior is unchanged, including the creation prompt
+- [x] `cs myproj main` cds into `~/work/myproj/main` without prompting.
+- [x] `cs myproj <loop>` behavior is unchanged, including the creation prompt
       for missing loops.
+
+## Verification notes
+
+Exercised via a stub `cs` launcher and temporary project roots under both zsh
+and bash: 16 checks covering the ooda default (bare, agent-prefixed, flag,
+and `shell` forms), the non-OODA fallback to `main/`, explicit `main` and loop
+names, and the non-interactive missing-loop error. All passed. Full container
+launch was not run; the change only affects the host-side `cd` target.
