@@ -2,21 +2,22 @@
 loop: default-to-control-plane
 product: sandbox
 owner: dynamicalsystem
-status: Open
+status: Closed
 parent: product-worktrees
 blocked-by: []
 worktrees:
   - /Users/dynamicalsystem/work/sandbox/main
   - /Users/dynamicalsystem/work/sandbox/default-to-control-plane
-prs: []
+prs:
+  - https://github.com/dynamicalsystem/sandbox/pull/16
 triggers: []
 ---
 
-# Default to Control Plane
+# [ARCHIVED] Default to Control Plane
 
 ## Status
 
-Open
+Closed
 
 **Owner:** dynamicalsystem
 
@@ -73,7 +74,7 @@ check, consistent with how the layout is detected elsewhere.
 - [x] Test the default lands in `ooda/` for an OODA product.
 - [x] Test the default falls back to `main/` for a non-OODA product.
 - [x] Test `cs <project> main` still lands in `main/`.
-- [ ] Close the loop once the PR is merged.
+- [x] Close the loop once the PR is merged.
 
 ## Outcomes
 
